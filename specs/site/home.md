@@ -41,7 +41,7 @@ _None._
 
 ## Open Questions
 
-- Brand themes matching askmeatsack.com. **Settled:** the home uses the shared meatsack-brand shell (wordmark, sibling pill, hero, seam, steps, use cases, curl) with the iron accent. Character hero art is still a labelled placeholder.
+- Brand themes matching askmeatsack.com. **Settled:** the home uses the shared meatsack-brand shell (wordmark, sibling pill, hero, seam, steps, use cases, curl) with the iron accent. The hero is the character-guide plate scene.
 
 ## Future Considerations
 
