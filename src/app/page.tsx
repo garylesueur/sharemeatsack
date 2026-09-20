@@ -29,7 +29,7 @@ export default function Home() {
         <header className="pt-16 sm:pt-20">
           <HeroScene
             src="/brand/hero.jpg"
-            alt="Placeholder: a steel plate waiting for files. Character art comes later."
+            alt="Silicon offers a page-link card while a meat sack puts a folder on an iron plate."
             eyebrow={HERO.eyebrow}
             title={PRODUCT_SENTENCE}
             description={SITE_DESCRIPTION}
