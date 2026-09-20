@@ -1,0 +1,113 @@
+version: 1
+flows:
+  - id: F1
+    name: Get files from a person
+    start: confirm
+    states:
+      - id: confirm
+        kind: action
+        label: Agent confirms who the person is
+      - id: create
+        kind: action
+        label: Agent creates the request
+      - id: deliver
+        kind: action
+        label: Agent puts the upload link where they will see it
+      - id: wait
+        kind: action
+        label: Agent waits
+      - id: upload
+        kind: screen
+        label: Person drops files
+      - id: scanning
+        kind: action
+        label: Each file reaches a scan verdict
+      - id: complete
+        kind: terminal
+        label: Request complete
+        outcome: The agent has the file list and download URLs for accepted files.
+      - id: expired
+        kind: terminal
+        label: Expired
+        outcome: The upload link no longer accepts files.
+      - id: cancelled
+        kind: terminal
+        label: Cancelled
+        outcome: The request stopped before a finished batch.
+      - id: refused
+        kind: terminal
+        label: Create refused
+        outcome: No upload link exists.
+    transitions:
+      - id: F1.T1
+        from: confirm
+        event: Confirmed
+        to: create
+        covers: [B11]
+      - id: F1.T2
+        from: confirm
+        event: Not sure who
+        to: confirm
+        outcome: The agent asks, then confirms again. No request is created yet.
+        covers: [B11]
+      - id: F1.T3
+        from: create
+        event: Payload usable
+        to: deliver
+        covers: [B1]
+      - id: F1.T4
+        from: create
+        event: Payload unusable
+        to: refused
+        covers: [B1]
+      - id: F1.T5
+        from: deliver
+        event: Link sent
+        to: wait
+        covers: [B11]
+      - id: F1.T6
+        from: wait
+        event: Still open
+        to: wait
+        guard: The bound elapsed and the request is not terminal.
+        covers: [B4]
+      - id: F1.T7
+        from: wait
+        event: Person opened the link
+        to: upload
+        covers: [B2]
+      - id: F1.T8
+        from: upload
+        event: Batch finished
+        to: scanning
+        covers: [B3]
+      - id: F1.T9
+        from: upload
+        event: Person or agent cancels
+        to: cancelled
+        covers: [B7]
+      - id: F1.T10
+        from: upload
+        event: Expiry passes
+        to: expired
+        covers: [B6]
+      - id: F1.T11
+        from: scanning
+        event: Every file has a verdict
+        to: complete
+        covers: [B5]
+      - id: F1.T12
+        from: wait
+        event: Terminal complete
+        to: complete
+        covers: [B4, B5]
+      - id: F1.T13
+        from: wait
+        event: Terminal expired
+        to: expired
+        covers: [B4, B6]
+      - id: F1.T14
+        from: wait
+        event: Terminal cancelled
+        to: cancelled
+        covers: [B4, B7]

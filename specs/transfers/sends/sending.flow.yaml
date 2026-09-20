@@ -1,0 +1,107 @@
+version: 1
+flows:
+  - id: F1
+    name: Send files to a person
+    start: confirm
+    states:
+      - id: confirm
+        kind: action
+        label: Agent confirms who the person is
+      - id: create
+        kind: action
+        label: Agent creates the send with file names and sizes
+      - id: upload
+        kind: action
+        label: Agent puts each file at its upload URL
+      - id: scanning
+        kind: action
+        label: Each file reaches a scan verdict
+      - id: deliver
+        kind: action
+        label: Agent puts the download link where they will see it
+      - id: download
+        kind: screen
+        label: Person takes files
+      - id: ready
+        kind: terminal
+        label: Send ready and delivered
+        outcome: The person can take the accepted files until expiry or cancel.
+      - id: expired
+        kind: terminal
+        label: Expired
+        outcome: The download link no longer serves files.
+      - id: cancelled
+        kind: terminal
+        label: Cancelled
+        outcome: The send was killed, or nothing remained after infection.
+      - id: refused
+        kind: terminal
+        label: Create refused
+        outcome: No download link exists.
+    transitions:
+      - id: F1.T1
+        from: confirm
+        event: Confirmed
+        to: create
+        covers: [B11]
+      - id: F1.T2
+        from: confirm
+        event: Not sure who
+        to: confirm
+        outcome: The agent asks, then confirms again. No send is created yet.
+        covers: [B11]
+      - id: F1.T3
+        from: create
+        event: Payload usable
+        to: upload
+        covers: [B1]
+      - id: F1.T4
+        from: create
+        event: Payload unusable
+        to: refused
+        covers: [B1]
+      - id: F1.T5
+        from: upload
+        event: Every offered file has arrived
+        to: scanning
+        covers: [B2, B3]
+      - id: F1.T6
+        from: upload
+        event: Agent cancels
+        to: cancelled
+        covers: [B7]
+      - id: F1.T7
+        from: upload
+        event: Expiry passes
+        to: expired
+        covers: [B6]
+      - id: F1.T8
+        from: scanning
+        event: Something remains to take
+        to: deliver
+        covers: [B3, B11]
+      - id: F1.T9
+        from: scanning
+        event: Nothing remains after infection
+        to: cancelled
+        covers: [B3]
+      - id: F1.T10
+        from: deliver
+        event: Link sent
+        to: download
+        covers: [B11]
+      - id: F1.T11
+        from: download
+        event: Person takes files
+        to: ready
+        covers: [B4, B5]
+      - id: F1.T12
+        from: download
+        event: Expiry passes
+        to: expired
+        covers: [B6]
+      - id: F1.T13
+        from: download
+        event: Agent cancels
+        to: cancelled
+        covers: [B7]
