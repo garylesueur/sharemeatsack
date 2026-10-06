@@ -1,6 +1,6 @@
 {
   "name": "sharemeatsack",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "An agent shares files with a person, or gets files from a person. Create a request or a send, paste the link, and wait. No API key.",
   "author": {
     "name": "Gary Le Sueur",
