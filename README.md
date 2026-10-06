@@ -88,3 +88,11 @@ See the [installation guide](https://sharemeatsack.com/install) for commands.
 
 Marketplace publication must precede deploying these website install links.
 Public ChatGPT/Codex and Cursor directory listings require separate submissions.
+
+### Site icons
+
+The browser favicon and Apple touch icon use the same character artwork as the
+plugin listing. Edit `public/plugin-icon.png`, then run `pnpm sync:icons` to
+regenerate `src/app/favicon.ico`, `src/app/icon.png`, and
+`src/app/apple-icon.png`. Do not edit those exports by hand. Builds regenerate
+them, and tests check that they match the source.
