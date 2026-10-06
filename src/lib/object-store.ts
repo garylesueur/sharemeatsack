@@ -25,7 +25,46 @@ export type PresignGetInput = {
   filename: string;
   contentType?: string;
   expiresInSeconds?: number;
+  purpose?: "preview" | "download";
 };
+
+export type ObjectReadHeaders = {
+  contentType: string;
+  contentDisposition: string;
+};
+
+export function objectReadHeaders(input: PresignGetInput): ObjectReadHeaders {
+  const filename =
+    Array.from(input.filename.slice(0, 255))
+      .map((char) => {
+        const code = char.charCodeAt(0);
+        return code < 32 || code === 127 || (char.length === 1 && code >= 0xd800 && code <= 0xdfff)
+          ? "_"
+          : char;
+      })
+      .join("") || "download";
+  const ascii = filename.replace(/[^\x20-\x7e]|["\\]/g, "_");
+  const encoded = encodeURIComponent(filename).replace(
+    /[!'()*]/g,
+    (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+  const offeredType = input.contentType?.split(";", 1)[0]?.trim().toLowerCase();
+  const contentType =
+    offeredType && /^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+$/.test(offeredType)
+      ? offeredType
+      : "application/octet-stream";
+  const activeType = [
+    "text/html",
+    "application/xhtml+xml",
+    "image/svg+xml",
+    "application/xml",
+    "text/xml",
+  ].includes(contentType);
+  return {
+    contentType: input.purpose === "preview" && activeType ? "text/plain" : contentType,
+    contentDisposition: `${input.purpose === "preview" ? "inline" : "attachment"}; filename="${ascii}"; filename*=UTF-8''${encoded}`,
+  };
+}
 
 export type ObjectStore = {
   available(): boolean;
@@ -35,6 +74,7 @@ export type ObjectStore = {
   put(key: string, body: Uint8Array, contentType: string): Promise<void>;
   get(key: string): Promise<{ body: Uint8Array; contentType: string } | null>;
   delete(key: string): Promise<void>;
+  authorizeRead?(key: string, url: URL): ObjectReadHeaders | null;
 };
 
 export type R2Config = {
@@ -111,11 +151,12 @@ function createR2Client(config: R2Config): AwsClient {
   });
 }
 
-export function createMemoryObjectStore(): ObjectStore & {
+export function createMemoryObjectStore(now: () => Date = () => new Date()): ObjectStore & {
   objects: Map<string, { body: Uint8Array; contentType: string; size?: number }>;
 } {
   const objects = new Map<string, { body: Uint8Array; contentType: string; size?: number }>();
   let issued = 0;
+  const reads = new Map<string, { key: string; expires: number; headers: ObjectReadHeaders }>();
   return {
     objects,
     available() {
@@ -139,12 +180,23 @@ export function createMemoryObjectStore(): ObjectStore & {
     },
     async presignGet(input) {
       const expiresIn = input.expiresInSeconds ?? DOWNLOAD_URL_TTL_SECONDS;
-      issued += 1;
       const encoded = input.key.split("/").map(encodeURIComponent).join("/");
+      const expires = now().getTime() + expiresIn * 1000;
+      for (const [token, grant] of reads) {
+        if (grant.expires <= now().getTime()) reads.delete(token);
+      }
+      const token = crypto.randomUUID();
+      reads.set(token, { key: input.key, expires, headers: objectReadHeaders(input) });
       return {
-        url: `/api/v1/objects/${encoded}?download=1&name=${encodeURIComponent(input.filename)}&sig=${issued}`,
-        expiresAt: new Date(Date.now() + expiresIn * 1000).toISOString(),
+        url: `/api/v1/objects/${encoded}?read=${token}`,
+        expiresAt: new Date(expires).toISOString(),
       };
+    },
+    authorizeRead(key, url) {
+      const token = url.searchParams.get("read");
+      const grant = token ? reads.get(token) : undefined;
+      if (!grant || grant.key !== key || grant.expires <= now().getTime()) return null;
+      return grant.headers;
     },
     async put(key, body, contentType) {
       objects.set(key, { body, contentType });
@@ -191,6 +243,10 @@ export function createR2ObjectStore(
       const expiresIn = input.expiresInSeconds ?? DOWNLOAD_URL_TTL_SECONDS;
       const target = new URL(r2ObjectUrl(config, input.key));
       target.searchParams.set("X-Amz-Expires", String(expiresIn));
+      const headers = objectReadHeaders(input);
+      target.searchParams.set("response-content-disposition", headers.contentDisposition);
+      target.searchParams.set("response-content-type", headers.contentType);
+      target.searchParams.set("response-cache-control", "private, no-store");
       const signed = await client.sign(new Request(target, { method: "GET" }), {
         aws: { signQuery: true },
       });
@@ -208,15 +264,15 @@ export function createR2ObjectStore(
         return null;
       }
       if (!response.ok) {
-        return null;
+        throw new Error(`Storage metadata is unavailable (${response.status})`);
       }
       const rawLength = response.headers.get("content-length");
       if (!rawLength?.trim()) {
-        return null;
+        throw new Error("Storage returned invalid file metadata");
       }
       const length = Number(rawLength);
       if (!Number.isSafeInteger(length) || length < 0) {
-        return null;
+        throw new Error("Storage returned invalid file metadata");
       }
       return { size: length };
     },

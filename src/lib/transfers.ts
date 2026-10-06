@@ -114,6 +114,7 @@ export type AgentFile = {
   scanStatus: string;
   scanSignature?: string;
   downloadUrl?: string;
+  downloadUrlExpiresAt?: string;
 };
 
 export type AgentTransferView = {
@@ -184,6 +185,7 @@ export type PublicFileView = {
   state: TransferFile["state"];
   scanStatus?: string;
   downloadUrl?: string;
+  downloadUrlExpiresAt?: string;
 };
 
 export type PublicTransferView = {
@@ -354,6 +356,7 @@ async function filesForAgent(deps: TransferServiceDeps, transfer: Transfer): Pro
         contentType: file.contentType,
       });
       item.downloadUrl = signed.url;
+      item.downloadUrlExpiresAt = signed.expiresAt;
     }
     listed.push(item);
   }
@@ -658,7 +661,14 @@ export function createTransferService(deps: TransferServiceDeps) {
       if (!file.key) {
         return transfer;
       }
-      const head = await store.head(file.key);
+      let head;
+      try {
+        head = await store.head(file.key);
+      } catch {
+        // Metadata can be temporarily unavailable while an upload arrives.
+        // Keep the send open so the next poll can retry without sealing it.
+        return transfer;
+      }
       if (!head || head.size !== file.size) {
         return transfer;
       }
@@ -918,6 +928,7 @@ export function createTransferService(deps: TransferServiceDeps) {
             state: file.state,
             scanStatus: file.scanStatus,
             downloadUrl: signed.url,
+            downloadUrlExpiresAt: signed.expiresAt,
           });
         }
         return { ...view, files };
@@ -947,6 +958,44 @@ export function createTransferService(deps: TransferServiceDeps) {
       }
       const transfer = await refreshScans(loaded);
       return { files: await filesForAgent(deps, transfer) };
+    },
+
+    async readFileUrl(input: {
+      transferId: string;
+      fileId: string;
+      token?: string;
+      purpose?: "preview" | "download";
+    }): Promise<{ url: string; expiresAt: string } | TransferServiceError> {
+      const unavailable: TransferServiceError = {
+        code: "not_found",
+        message: "File not found",
+        status: 404,
+      };
+      const loaded = await deps.store.getById(input.transferId);
+      if (!loaded || !input.token) return unavailable;
+      const agent = tokensMatch(input.token, loaded.agentToken);
+      const publicSend = loaded.kind === "send" && tokensMatch(input.token, loaded.publicToken);
+      if (!agent && !publicSend) return unavailable;
+      const transfer = await refreshScans({ ...loaded, status: liveStatus(loaded, deps.now()) });
+      if (
+        transfer.status === "open" ||
+        (!agent &&
+          (transfer.status !== "ready" || Date.parse(transfer.expiresAt) <= deps.now().getTime()))
+      )
+        return unavailable;
+      const file = transfer.files?.find((item) => item.id === input.fileId);
+      if (!file || file.state !== "accepted" || !file.key || !isTakeableScan(file.scanStatus)) {
+        return unavailable;
+      }
+      if (!deps.objectStore?.available()) return unavailable;
+      if (!(await deps.objectStore.head(file.key))) return unavailable;
+      if (!agent && Date.parse(transfer.expiresAt) <= deps.now().getTime()) return unavailable;
+      return await deps.objectStore.presignGet({
+        key: file.key,
+        filename: file.filename,
+        contentType: file.contentType,
+        purpose: input.purpose ?? "download",
+      });
     },
 
     async markdownForManage(input: {

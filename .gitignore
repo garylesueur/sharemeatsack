@@ -23,6 +23,7 @@ skills-lock.json
 # next.js
 /.next/
 /out/
+/public/_preview/
 
 # production
 /build
