@@ -53,3 +53,37 @@ Same field names, different values. Local work uses Development only.
 `.env.development.tpl`, `.env.preview.tpl`, and `.env.production.tpl` hold
 `op://` references only. `.env.example` is the empty placeholder. Never print
 `.env` contents and never commit secrets.
+
+## Plugin marketplace
+
+The plugin ID is `sharemeatsack`; its display name and MCP tool name are
+**sharemeatsack.com**. The portable manifest includes OpenAI listing metadata and
+icons; `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json` provide
+client compatibility.
+
+The [Meatsack marketplace](https://github.com/garylesueur/meatsack-marketplace)
+packages all three products. It contains generated, minimal plugin copies;
+this repository remains the source for this product's manifest, skill, MCP
+connection, and logo. Run the marketplace sync after changing those files.
+
+Codex:
+
+```sh
+codex plugin marketplace add garylesueur/meatsack-marketplace
+```
+
+Then install **sharemeatsack.com** from the Meatsack source in Plugins.
+
+Claude Code:
+
+```text
+/plugin marketplace add garylesueur/meatsack-marketplace
+/plugin install sharemeatsack@meatsack
+```
+
+Cursor Teams/Enterprise: Dashboard → Plugins & MCPs → Add Marketplace →
+Import from Repo, using the marketplace repository URL. Install the product
+from Customize. A local clone can also be linked into `~/.cursor/plugins/local/`.
+
+Marketplace publication must precede deploying these website install links.
+Public ChatGPT/Codex and Cursor directory listings require separate submissions.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PluginInstall } from "@/components/plugin-install";
 
 type HomeLandingProps = {
   mcpUrl: string;
@@ -37,9 +38,11 @@ export function HomeLanding({ mcpUrl, cursorHref, pluginHref }: HomeLandingProps
           href={pluginHref}
           className="inline-flex rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground"
         >
-          Cursor plugin
+          Plugin source
         </a>
       </div>
+
+      <PluginInstall />
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
         <code className="max-w-full break-all rounded-md bg-muted px-2 py-1 font-mono text-sm text-foreground">

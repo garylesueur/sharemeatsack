@@ -1,3 +1,4 @@
+import { MARKETPLACE_HREF, pluginInstallMarkdown } from "./plugin-install";
 import { CURSOR_PLUGIN_HREF, cursorInstallPageHref } from "./cursor-install";
 import { SHAREMEATSACK_SKILL_MARKDOWN } from "./sharemeatsack-skill";
 import { PRODUCT_NAME, PRODUCT_SENTENCE } from "./product";
@@ -19,7 +20,8 @@ ${PRODUCT_NAME} is how an agent shares files with a person, or gets files from a
 
 - [Skill](${origin}/skill.md): How to use the ${PRODUCT_NAME} tool
 - [MCP and HTTP](${origin}/mcp.md): Connect, actions, curl
-- [Cursor plugin](${CURSOR_PLUGIN_HREF}): MCP plus the skill
+- [Plugin marketplace](${MARKETPLACE_HREF}): Install in Codex, Claude Code, or Cursor
+- [Plugin source](${CURSOR_PLUGIN_HREF}): MCP plus the skill
 - [Home](${origin}/): Human landing page
 
 ## Optional
@@ -50,6 +52,7 @@ This URL is the MCP server. Browsers get a short page. Agents should fetch \`${o
 
 There is no API key. Create is open today. Creating will later need a lanyard account. The person who opens the link never signs in.
 
+${pluginInstallMarkdown()}
 ## Tool
 
 The tool is named \`${PRODUCT_NAME}\`. Actions: \`request\`, \`send\`, \`status\`, \`wait\`, \`cancel\`, \`files\`.
@@ -138,6 +141,7 @@ export function mcpGuideHtml(origin = publicOrigin()): string {
       <li><a href="${originEscaped}/mcp.md">API guide (markdown)</a></li>
       <li><a href="${originEscaped}/skill.md">Skill</a></li>
       <li><a href="${CURSOR_PLUGIN_HREF}">Cursor plugin</a></li>
+      <li><a href="${MARKETPLACE_HREF}">Meatsack plugin marketplace</a></li>
       <li><a href="${originEscaped}/llms.txt">llms.txt</a></li>
       <li><a href="${originEscaped}/">${title}</a></li>
     </ul>
