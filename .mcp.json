@@ -1,7 +1,8 @@
 {
   "mcpServers": {
     "sharemeatsack.com": {
-      "url": "https://sharemeatsack.com/mcp"
+      "url": "https://sharemeatsack.com/mcp",
+      "type": "http"
     }
   }
 }

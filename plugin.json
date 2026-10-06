@@ -1,6 +1,6 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-  "name": "sharemeatsack.com",
+  "name": "sharemeatsack",
   "version": "0.1.0",
   "description": "An agent shares files with a person, or gets files from a person. Create a request or a send, paste the link, and wait. No API key.",
   "author": {
@@ -15,5 +15,28 @@
     "files",
     "mcp",
     "file-transfer"
-  ]
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "sharemeatsack.com",
+        "shortDescription": "Send files to a person or request files from them",
+        "longDescription": "An agent shares files with a person, or gets files from a person. Create a request or a send, paste the link, and wait. No API key. The plugin includes the hosted MCP connection and the skill that guides the agent through the workflow. The agent delivers the resulting link using the conversation or a service it already has access to.",
+        "developerName": "Gary Le Sueur",
+        "category": "Productivity",
+        "capabilities": [
+          "File requests",
+          "File sharing"
+        ],
+        "websiteURL": "https://sharemeatsack.com",
+        "defaultPrompt": [
+          "Request the files you need from me.",
+          "Share these files with a download link."
+        ],
+        "brandColor": "#4a5a6a",
+        "logo": "./public/logo.svg",
+        "composerIcon": "./public/logo.svg"
+      }
+    }
+  }
 }
