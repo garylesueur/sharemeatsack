@@ -55,6 +55,53 @@ async function putAll(
 }
 
 describe("B6 — a file is scanned before anyone may take it", () => {
+  it("resubmits a lost scan after the scanner restarts", async () => {
+    const { transfers, store, objectStore, scanner } = scanService();
+    await transfers.create({
+      action: "send",
+      title: "Video",
+      files: [{ name: "video.mp4", type: "video/mp4", size: 4 }],
+    });
+    await putAll(store, objectStore);
+    await transfers.complete({ transferId: "transfer-1", agentToken: "token-2" });
+    const lostHandle = (await store.getById("transfer-1"))?.files?.[0]?.scanHandle;
+    const poll = scanner.poll;
+    scanner.poll = async (handle) => (handle === lostHandle ? null : poll(handle));
+    const waiting = await transfers.getForAgent({
+      transferId: "transfer-1",
+      agentToken: "token-2",
+    });
+    expect(waiting).toMatchObject({ status: "scanning", files: [{ scanStatus: "scanning" }] });
+    expect(scanner.submitted.size).toBe(2);
+    const newHandle = (await store.getById("transfer-1"))?.files?.[0]?.scanHandle;
+    expect(newHandle).not.toBe(lostHandle);
+    if (!newHandle) throw new Error("expected replacement scan");
+    scanner.resolve(newHandle, { verdict: "clean" });
+    expect(
+      await transfers.getForAgent({ transferId: "transfer-1", agentToken: "token-2" }),
+    ).toMatchObject({
+      status: "ready",
+      files: [{ scanStatus: "clean", downloadUrl: expect.any(String) }],
+    });
+  });
+
+  it("keeps the existing scan on a temporary scanner outage", async () => {
+    const { transfers, store, objectStore, scanner } = scanService();
+    await transfers.create({
+      action: "send",
+      title: "Video",
+      files: [{ name: "video.mp4", type: "video/mp4", size: 4 }],
+    });
+    await putAll(store, objectStore);
+    await transfers.complete({ transferId: "transfer-1", agentToken: "token-2" });
+    scanner.poll = async () => {
+      throw new Error("scanner unavailable");
+    };
+    expect(
+      await transfers.getForAgent({ transferId: "transfer-1", agentToken: "token-2" }),
+    ).toMatchObject({ status: "scanning", files: [{ scanStatus: "scanning" }] });
+    expect(scanner.submitted.size).toBe(1);
+  });
   it("keeps a sealed request at scanning and withholds download URLs", async () => {
     const { transfers, store, objectStore } = scanService();
     await transfers.createRequest({ title: "Invoices" });
@@ -183,6 +230,32 @@ describe("B7 / B8 / B9 / B10 — verdicts", () => {
     expect(agent.files[0]?.downloadUrl).toMatch(/^\/api\/v1\/objects\//);
   });
 
+  it("offers files over the scan cap even when the scanner is unavailable", async () => {
+    const { transfers, store, objectStore } = scanService();
+    const withoutScanner = createTransferService({
+      store,
+      objectStore,
+      scanner: null,
+      now: () => new Date("2026-09-19T12:00:00.000Z"),
+      createId: () => "transfer-1",
+      createToken: () => "unused",
+    });
+    await transfers.create({
+      action: "send",
+      title: "Video",
+      files: [{ name: "video.mp4", type: "video/mp4", size: tooLarge }],
+    });
+    await putAll(store, objectStore);
+    const agent = await withoutScanner.getForAgent({
+      transferId: "transfer-1",
+      agentToken: "token-2",
+    });
+    expect(agent).toMatchObject({
+      status: "ready",
+      files: [{ scanStatus: "skipped-too-large", downloadUrl: expect.any(String) }],
+    });
+  });
+
   it("keeps a failed scan blocked", async () => {
     const { transfers, store, objectStore, scanner } = scanService();
     await transfers.createRequest({ title: "Invoices" });
@@ -286,17 +359,11 @@ describe("sending — scan gate", () => {
     const byName = new Map((saved?.files ?? []).map((file) => [file.filename, file]));
     const ok = byName.get("ok.pdf")?.scanHandle;
     const bad = byName.get("bad.pdf")?.scanHandle;
-    const big = byName.get("huge.bin")?.scanHandle;
-    if (!ok || !bad || !big) {
+    if (!ok || !bad) {
       throw new Error("expected handles");
     }
     scanner.resolve(ok, { verdict: "clean" });
     scanner.resolve(bad, { verdict: "infected", signature: "Eicar-Test-Signature" });
-    scanner.resolve(big, {
-      verdict: "too-large",
-      declaredSizeBytes: tooLarge,
-      capBytes: SCAN_SIZE_CAP_BYTES,
-    });
     const person = await transfers.getForPublic({
       transferId: "transfer-1",
       publicToken: "token-1",

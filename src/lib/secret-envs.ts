@@ -20,6 +20,9 @@ export const secretKeys = [
   "R2_SECRET_ACCESS_KEY",
   "R2_BUCKET_NAME",
   "R2_PUBLIC_BASE_URL",
+  "CLEANROOM_URL",
+  "CLEANROOM_SERVICE_CREDENTIAL",
+  "CLEANROOM_WEBHOOK_SECRET",
 ] as const;
 
 export const envTemplateFiles = {

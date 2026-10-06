@@ -13,6 +13,7 @@ import { publicOrigin } from "./public-origin";
 import {
   FILE_MAX_BYTES,
   FILE_MAX_COUNT,
+  SCAN_SIZE_CAP_BYTES,
   TRANSFER_DEFAULT_TTL_SECONDS,
   TRANSFER_MAX_BYTES,
   WAIT_BUDGET_SECONDS,
@@ -596,6 +597,10 @@ export function createTransferService(deps: TransferServiceDeps) {
         files[index] = { ...file, scanStatus: "failed", scanReason: "store unavailable" };
         continue;
       }
+      if (file.size > SCAN_SIZE_CAP_BYTES) {
+        files[index] = { ...file, scanStatus: "skipped-too-large" };
+        continue;
+      }
       if (!scanner?.available()) {
         files[index] = { ...file, scanStatus: "failed", scanReason: "scanner unavailable" };
         continue;
@@ -684,12 +689,26 @@ export function createTransferService(deps: TransferServiceDeps) {
       if (!file.scanHandle || isTerminalScan(file.scanStatus)) {
         continue;
       }
-      const polled = await scanner.poll(file.scanHandle);
+      let polled;
+      try {
+        polled = await scanner.poll(file.scanHandle);
+      } catch {
+        continue;
+      }
+      if (!polled) {
+        current = {
+          ...current,
+          files: current.files?.map((candidate) =>
+            candidate.id === file.id ? { ...candidate, scanHandle: undefined } : candidate,
+          ),
+        };
+        continue;
+      }
       if (polled?.verdict) {
         current = await applyVerdict(current, file.id, polled.verdict);
       }
     }
-    return await finalizeIfScanned(current);
+    return await submitScans(current);
   }
 
   async function authorizeFileMutation(input: {

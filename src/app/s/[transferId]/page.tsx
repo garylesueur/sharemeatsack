@@ -3,6 +3,7 @@ import { PlainTransfer, TransferShell } from "@/components/transfer-chrome";
 import { getDefaultTransferService } from "@/lib/app-transfers";
 import { humanScreenFor, isTransferServiceError, uploadPageCopy } from "@/lib/transfers";
 import { UploadDropzone } from "./upload-dropzone";
+import { TransferRefresh } from "./transfer-refresh";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,7 @@ export default async function UploadPage({ params, searchParams }: PageProps) {
 
   return (
     <Frame>
+      {screen === "scanning" || screen === "not_ready" ? <TransferRefresh /> : null}
       {title ? <h1 className="text-2xl font-semibold tracking-tight">{title}</h1> : null}
       {message ? <p className="mt-2 text-muted-foreground">{message}</p> : null}
       <section className={title ? "mt-8" : ""}>

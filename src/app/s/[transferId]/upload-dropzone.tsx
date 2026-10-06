@@ -2,13 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { putBrowserFile, uploadWithRetry } from "@/lib/browser-upload";
 import type { PublicFileView } from "@/lib/transfers";
 
 type Row = {
   id: string;
   name: string;
   size: number;
-  status: "pending" | "uploading" | "done" | "error";
+  status: "pending" | "uploading" | "retrying" | "done" | "error";
+  progress?: number;
+  file?: File;
   detail?: string;
 };
 
@@ -50,6 +53,51 @@ export function UploadDropzone({
     setRows((current) => current.map((row) => (row.id === id ? { ...row, ...next } : row)));
   }
 
+  async function freshUploadUrl(id: string): Promise<string> {
+    const response = await fetch(
+      `/api/v1/transfers/${transferId}/files/${id}/refresh-url?${tokenQuery(publicToken)}`,
+      { method: "POST" },
+    );
+    if (!response.ok) {
+      throw new Error(await readError(response));
+    }
+    return ((await response.json()) as { uploadUrl: string }).uploadUrl;
+  }
+
+  async function upload(id: string, file: File, uploadUrl: string) {
+    patch(id, { detail: undefined, progress: 0 });
+    try {
+      await uploadWithRetry({
+        uploadUrl,
+        put: (url) => putBrowserFile(url, file, (progress) => patch(id, { progress })),
+        refresh: () => freshUploadUrl(id),
+        onPhase: (status) => patch(id, { status, progress: 0 }),
+      });
+      patch(id, { status: "done", progress: 100 });
+    } catch (error) {
+      patch(id, {
+        status: "error",
+        detail: error instanceof Error ? error.message : "Upload failed. Please retry.",
+      });
+    }
+  }
+
+  async function retry(row: Row) {
+    if (!row.file) return;
+    setBusy(true);
+    setNotice(undefined);
+    try {
+      await upload(row.id, row.file, await freshUploadUrl(row.id));
+    } catch (error) {
+      patch(row.id, {
+        status: "error",
+        detail: error instanceof Error ? error.message : "Couldn't retry the upload.",
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function registerAndPut(list: File[]) {
     setBusy(true);
     setNotice(undefined);
@@ -77,11 +125,12 @@ export function UploadDropzone({
       };
       setRows((current) => [
         ...current,
-        ...body.files.map((file) => ({
+        ...body.files.map((file, index) => ({
           id: file.id,
           name: file.name,
           size: file.size,
-          status: "uploading" as const,
+          status: "pending" as const,
+          file: list[index],
         })),
       ]);
       for (const [index, offered] of list.entries()) {
@@ -89,38 +138,10 @@ export function UploadDropzone({
         if (!record) {
           continue;
         }
-        const put = await fetch(record.uploadUrl, {
-          method: "PUT",
-          headers: {
-            "content-type": offered.type || "application/octet-stream",
-          },
-          body: offered,
-        });
-        if (put.ok) {
-          patch(record.id, { status: "done" });
-          continue;
-        }
-        const refresh = await fetch(
-          `/api/v1/transfers/${transferId}/files/${record.id}/refresh-url?${tokenQuery(publicToken)}`,
-          { method: "POST" },
-        );
-        if (!refresh.ok) {
-          patch(record.id, { status: "error", detail: await readError(refresh) });
-          continue;
-        }
-        const next = (await refresh.json()) as { uploadUrl: string };
-        const again = await fetch(next.uploadUrl, {
-          method: "PUT",
-          headers: {
-            "content-type": offered.type || "application/octet-stream",
-          },
-          body: offered,
-        });
-        patch(
-          record.id,
-          again.ok ? { status: "done" } : { status: "error", detail: "Upload failed. Try again." },
-        );
+        await upload(record.id, offered, record.uploadUrl);
       }
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Something went wrong. Please retry.");
     } finally {
       setBusy(false);
     }
@@ -139,6 +160,8 @@ export function UploadDropzone({
         return;
       }
       setRows((current) => current.filter((row) => row.id !== id));
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Something went wrong. Please retry.");
     } finally {
       setBusy(false);
     }
@@ -159,6 +182,8 @@ export function UploadDropzone({
         return;
       }
       router.refresh();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Something went wrong. Please retry.");
     } finally {
       setBusy(false);
     }
@@ -179,6 +204,8 @@ export function UploadDropzone({
         return;
       }
       router.refresh();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Something went wrong. Please retry.");
     } finally {
       setBusy(false);
     }
@@ -191,6 +218,7 @@ export function UploadDropzone({
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
           event.preventDefault();
+          if (busy) return;
           const dropped = [...event.dataTransfer.files];
           if (dropped.length > 0) {
             void registerAndPut(dropped);
@@ -222,9 +250,22 @@ export function UploadDropzone({
               className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-sm"
             >
               <span>
-                {row.name} · {row.status}
+                {row.name} · {(row.size / (1024 * 1024)).toFixed(1)} MiB · {row.status}
+                {row.status === "uploading" || row.status === "retrying"
+                  ? ` ${row.progress ?? 0}%`
+                  : ""}
                 {row.detail ? ` — ${row.detail}` : ""}
               </span>
+              {row.status === "error" && row.file ? (
+                <button
+                  type="button"
+                  disabled={busy}
+                  className="underline underline-offset-4"
+                  onClick={() => void retry(row)}
+                >
+                  Retry
+                </button>
+              ) : null}
               <button
                 type="button"
                 className="text-muted-foreground underline underline-offset-4 hover:text-foreground"
@@ -242,7 +283,17 @@ export function UploadDropzone({
         <button
           type="button"
           className="rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground disabled:opacity-50"
-          disabled={busy || rows.length === 0}
+          disabled={
+            busy ||
+            rows.length === 0 ||
+            rows.some(
+              (row) =>
+                row.status === "error" ||
+                row.status === "uploading" ||
+                row.status === "retrying" ||
+                (row.status === "pending" && Boolean(row.file)),
+            )
+          }
           onClick={() => void finish()}
         >
           Finish
