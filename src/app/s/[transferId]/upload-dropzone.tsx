@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { FileSize } from "@/components/file-size";
 import { putBrowserFile, uploadWithRetry } from "@/lib/browser-upload";
 import type { PublicFileView } from "@/lib/transfers";
 
@@ -250,7 +251,7 @@ export function UploadDropzone({
               className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-sm"
             >
               <span>
-                {row.name} · {(row.size / (1024 * 1024)).toFixed(1)} MiB · {row.status}
+                {row.name} · <FileSize bytes={row.size} /> · {row.status}
                 {row.status === "uploading" || row.status === "retrying"
                   ? ` ${row.progress ?? 0}%`
                   : ""}
