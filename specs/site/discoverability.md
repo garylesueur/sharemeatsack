@@ -14,6 +14,12 @@ Public pages tell search engines, answer engines, and agents what sharemeatsack.
 
 The home page has a title, description, canonical URL, and Open Graph tags naming sharemeatsack.com.
 
+Browser tabs and phone home-screen bookmarks use the product’s Meatsack
+character icon and its ask, show, or share badge. `public/plugin-icon.png` owns
+the artwork; `pnpm sync:icons` exports the multi-size favicon, 32px PNG icon,
+and 180px Apple touch icon. Builds regenerate these exports and tests check
+that they match the source. Next.js supplies their metadata links.
+
 ### B2 — Crawlers get a sitemap and robots file 🟢 implemented
 
 Crawlers can fetch a sitemap of the public documents (home, MCP page, markdown guide, skill, llms.txt). Robots allow those, and do not ask crawlers to index API routes or transfer pages.
