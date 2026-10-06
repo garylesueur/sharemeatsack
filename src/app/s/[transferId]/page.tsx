@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { FileSize } from "@/components/file-size";
 import { PlainTransfer, TransferShell } from "@/components/transfer-chrome";
 import { getDefaultTransferService } from "@/lib/app-transfers";
 import { humanScreenFor, isTransferServiceError, uploadPageCopy } from "@/lib/transfers";
@@ -52,7 +53,7 @@ export default async function UploadPage({ params, searchParams }: PageProps) {
           <ul className="mt-6 space-y-2 text-sm text-foreground">
             {view.files.map((file) => (
               <li key={file.id}>
-                {file.name} · {file.size} bytes
+                {file.name} · <FileSize bytes={file.size} />
               </li>
             ))}
           </ul>
@@ -61,7 +62,7 @@ export default async function UploadPage({ params, searchParams }: PageProps) {
           <ul className="mt-6 space-y-2 text-sm text-foreground">
             {view.files.map((file) => (
               <li key={file.id}>
-                {file.name} · {file.size} bytes
+                {file.name} · <FileSize bytes={file.size} />
               </li>
             ))}
           </ul>
@@ -74,7 +75,7 @@ export default async function UploadPage({ params, searchParams }: PageProps) {
                 className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-sm"
               >
                 <span>
-                  {file.name} · {file.size} bytes
+                  {file.name} · <FileSize bytes={file.size} />
                   {file.scanStatus === "skipped-too-large" ? " · not scanned (too large)" : ""}
                 </span>
                 {file.downloadUrl ? (
