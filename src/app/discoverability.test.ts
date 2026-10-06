@@ -8,6 +8,7 @@ describe("public crawler files", () => {
     const urls = sitemap().map((entry) => entry.url);
     expect(urls).toEqual([
       PRODUCT_ORIGIN,
+      `${PRODUCT_ORIGIN}/install`,
       `${PRODUCT_ORIGIN}/mcp`,
       `${PRODUCT_ORIGIN}/mcp.md`,
       `${PRODUCT_ORIGIN}/skill.md`,

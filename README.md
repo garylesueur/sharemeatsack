@@ -83,7 +83,8 @@ Claude Code:
 
 Cursor Teams/Enterprise: Dashboard → Plugins & MCPs → Add Marketplace →
 Import from Repo, using the marketplace repository URL. Install the product
-from Customize. A local clone can also be linked into `~/.cursor/plugins/local/`.
+from Customize. For a personal account, copy the plugin package into `~/.cursor/plugins/local/`.
+See the [installation guide](https://sharemeatsack.com/install) for commands.
 
 Marketplace publication must precede deploying these website install links.
 Public ChatGPT/Codex and Cursor directory listings require separate submissions.

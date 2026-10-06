@@ -14,6 +14,7 @@ export function siteChromeProps() {
     sibling: SIBLING,
     repoHref: CURSOR_PLUGIN_HREF,
     docs: [
+      { label: "Install plugin", href: "/install" },
       { label: "skill.md", href: `${origin}/skill.md` },
       { label: "mcp.md", href: `${origin}/mcp.md` },
       { label: "llms.txt", href: "/llms.txt" },
