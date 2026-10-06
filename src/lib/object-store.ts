@@ -200,15 +200,22 @@ export function createR2ObjectStore(
       };
     },
     async head(key) {
-      const response = await client.fetch(r2ObjectUrl(config, key), { method: "HEAD" });
+      const response = await client.fetch(r2ObjectUrl(config, key), {
+        method: "HEAD",
+        headers: { "Accept-Encoding": "identity" },
+      });
       if (response.status === 404) {
         return null;
       }
       if (!response.ok) {
         return null;
       }
-      const length = Number(response.headers.get("content-length") ?? "");
-      if (!Number.isFinite(length)) {
+      const rawLength = response.headers.get("content-length");
+      if (!rawLength?.trim()) {
+        return null;
+      }
+      const length = Number(rawLength);
+      if (!Number.isSafeInteger(length) || length < 0) {
         return null;
       }
       return { size: length };
