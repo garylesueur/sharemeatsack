@@ -13,8 +13,8 @@
     "sync:brand": "node brand/scripts/sync-brand.mjs",
     "start": "next start",
     "lint": "oxlint && node scripts/check-import-layers.mjs",
-    "format": "oxfmt .",
-    "format:check": "oxfmt --check .",
+    "format": "oxfmt . '!.agents/**'",
+    "format:check": "oxfmt --check . '!.agents/**'",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
