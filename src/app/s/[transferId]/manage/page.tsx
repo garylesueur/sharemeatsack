@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { FileBrowser } from "@/components/file-browser";
+import { FileAccessProvider } from "@/components/file-access";
 import { PlainTransfer, TransferShell } from "@/components/transfer-chrome";
 import { getDefaultTransferService } from "@/lib/app-transfers";
 import { isTransferServiceError, uploadPageCopy } from "@/lib/transfers";
@@ -32,7 +34,7 @@ export default async function ManagePage({ params, searchParams }: PageProps) {
   }
 
   return (
-    <TransferShell>
+    <TransferShell wide={view.files.length > 0}>
       <p className="text-sm text-muted-foreground">
         Private manage link — not for the person uploading.
       </p>
@@ -53,29 +55,9 @@ export default async function ManagePage({ params, searchParams }: PageProps) {
         </div>
       </dl>
       <h2 className="mt-8 text-lg font-medium">Files</h2>
-      {view.files.length === 0 ? (
-        <p className="mt-2 text-sm text-muted-foreground">No files yet.</p>
-      ) : (
-        <ul className="mt-3 space-y-2 text-sm text-foreground">
-          {view.files.map((file) => (
-            <li key={file.id}>
-              {file.name} · {file.size} bytes · {file.scanStatus}
-              {file.downloadUrl ? (
-                <>
-                  {" "}
-                  ·{" "}
-                  <a
-                    className="underline underline-offset-4 hover:text-primary"
-                    href={file.downloadUrl}
-                  >
-                    Download
-                  </a>
-                </>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      )}
+      <FileAccessProvider access={token ? { transferId, token } : undefined}>
+        <FileBrowser files={view.files} title={view.title} message={view.message} />
+      </FileAccessProvider>
     </TransferShell>
   );
 }

@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "dev:op": "op run --env-file=.env.development.tpl -- next dev",
+    "dev": "node scripts/sync-preview-assets.mjs && next dev",
+    "dev:op": "node scripts/sync-preview-assets.mjs && op run --env-file=.env.development.tpl -- next dev",
     "env": "op inject -i .env.development.tpl -o .env.local",
     "env:op-items": "bash scripts/ensure-op-items.sh",
     "env:vercel": "bash scripts/sync-vercel-env.sh",
-    "build": "node scripts/sync-icons.mjs && node scripts/sync-skill.mjs && node brand/scripts/sync-brand.mjs && next build",
+    "build": "node scripts/sync-preview-assets.mjs && node scripts/sync-icons.mjs && node scripts/sync-skill.mjs && node brand/scripts/sync-brand.mjs && next build",
     "sync:skill": "node scripts/sync-skill.mjs",
     "sync:brand": "node brand/scripts/sync-brand.mjs",
     "start": "next start",
@@ -17,7 +17,8 @@
     "format:check": "oxfmt --check . '!.agents/**'",
     "typecheck": "tsc --noEmit",
     "test": "node scripts/sync-icons.mjs --check && vitest run",
-    "sync:icons": "node scripts/sync-icons.mjs"
+    "sync:icons": "node scripts/sync-icons.mjs",
+    "sync:preview-assets": "node scripts/sync-preview-assets.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
@@ -26,13 +27,19 @@
     "aws4fetch": "^1.0.20",
     "mcp-handler": "^1.1.0",
     "next": "16.3.1",
+    "papaparse": "5.7.0",
+    "pdfjs-dist": "^6.4.299",
+    "prism-react-renderer": "^2.4.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/papaparse": "^5.5.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "oxfmt": "^0.63.0",

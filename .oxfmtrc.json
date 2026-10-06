@@ -4,6 +4,7 @@
     ".mcp.json",
     ".next/**",
     "build/**",
+    "public/_preview/**",
     "mcp.json",
     "out/**",
     ".cursor-plugin/plugin.json",

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { FILE_MAX_BYTES } from "./schema";
 import { createMemoryObjectStore } from "./object-store";
 import { createMemoryTransferStore } from "./transfer-store";
@@ -15,10 +15,14 @@ function sendService() {
   const store = createMemoryTransferStore();
   const objectStore = createMemoryObjectStore();
   let files = 0;
+  let now = new Date("2026-09-19T12:00:00.000Z");
   const transfers = createTransferService({
     store,
     objectStore,
-    now: () => new Date("2026-09-19T12:00:00.000Z"),
+    now: () => now,
+    sleep: async (ms) => {
+      now = new Date(now.getTime() + ms);
+    },
     createId: () => "transfer-1",
     createFileId: () => `file-${++files}`,
     createToken: (() => {
@@ -110,6 +114,35 @@ describe("B2 — agent puts the bytes itself", () => {
       agentToken: "token-2",
     });
     expect(status).toMatchObject({ status: "open", files: [] });
+  });
+
+  it("keeps an open send retryable after metadata failure and completes after storage recovers", async () => {
+    const { transfers, objectStore, store } = sendService();
+    await transfers.create({ action: "send", title: "For Simon", files: twoFiles });
+    const saved = await store.getById("transfer-1");
+    await Promise.all(
+      (saved?.files ?? []).map((file) => {
+        if (!file.key) throw new Error("expected key");
+        return objectStore.put(file.key, new Uint8Array(file.size), file.contentType);
+      }),
+    );
+    const head = vi
+      .spyOn(objectStore, "head")
+      .mockRejectedValue(new Error("R2 temporarily unavailable"));
+    expect(
+      await transfers.getForPublic({ transferId: "transfer-1", publicToken: "token-1" }),
+    ).toMatchObject({ status: "open" });
+    expect(
+      await transfers.wait({ transferId: "transfer-1", agentToken: "token-2", seconds: 1 }),
+    ).toMatchObject({ status: "open", nextAction: "wait" });
+    expect(
+      await transfers.complete({ transferId: "transfer-1", agentToken: "token-2" }),
+    ).toMatchObject({ code: "incomplete_upload", status: 409 });
+    expect(await store.getById("transfer-1")).toEqual(saved);
+    head.mockRestore();
+    expect(
+      await transfers.complete({ transferId: "transfer-1", agentToken: "token-2" }),
+    ).toMatchObject({ status: "ready" });
   });
 
   it("becomes ready after every PUT and does not serve the public token a refresh", async () => {

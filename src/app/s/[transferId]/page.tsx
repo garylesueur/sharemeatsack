@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { FileBrowser } from "@/components/file-browser";
+import { FileAccessProvider } from "@/components/file-access";
 import { FileSize } from "@/components/file-size";
 import { PlainTransfer, TransferShell } from "@/components/transfer-chrome";
 import { getDefaultTransferService } from "@/lib/app-transfers";
@@ -35,7 +37,7 @@ export default async function UploadPage({ params, searchParams }: PageProps) {
       : TransferShell;
 
   return (
-    <Frame>
+    <Frame wide={screen === "ready"}>
       {screen === "scanning" || screen === "not_ready" ? <TransferRefresh /> : null}
       {title ? <h1 className="text-2xl font-semibold tracking-tight">{title}</h1> : null}
       {message ? <p className="mt-2 text-muted-foreground">{message}</p> : null}
@@ -68,27 +70,9 @@ export default async function UploadPage({ params, searchParams }: PageProps) {
           </ul>
         ) : null}
         {screen === "ready" && !isTransferServiceError(view) ? (
-          <ul className="mt-6 space-y-3">
-            {view.files.map((file) => (
-              <li
-                key={file.id}
-                className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-sm"
-              >
-                <span>
-                  {file.name} · <FileSize bytes={file.size} />
-                  {file.scanStatus === "skipped-too-large" ? " · not scanned (too large)" : ""}
-                </span>
-                {file.downloadUrl ? (
-                  <a
-                    className="underline underline-offset-4 hover:text-primary"
-                    href={file.downloadUrl}
-                  >
-                    Download
-                  </a>
-                ) : null}
-              </li>
-            ))}
-          </ul>
+          <FileAccessProvider access={publicToken ? { transferId, token: publicToken } : undefined}>
+            <FileBrowser files={view.files} title={view.title} message={view.message} />
+          </FileAccessProvider>
         ) : null}
       </section>
     </Frame>

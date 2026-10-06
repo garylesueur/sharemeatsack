@@ -56,7 +56,7 @@ A download URL the agent is given expires in minutes, not days. Action `files` (
 
 ### B12 — The transfer expires, then the files go 🔵 future
 
-If the agent does not set an expiry, the transfer lasts **7 days** from create. The agent may choose a sooner expiry, never later than **30 days**. After expiry, links stop working. The stored files are destroyed shortly after. A new transfer is a new link.
+If the agent does not set an expiry, the transfer lasts **7 days** from create. The agent may choose a sooner expiry, never later than **30 days**. After expiry, public upload and download links stop working. The stored files are destroyed shortly after. While accepted objects remain retained, private agent access follows the existing request/agent rules; expiry does not silently remove those listed files. A new transfer is a new link.
 
 ### B13 — Progress is visible while a file is going in 🟢 implemented
 
@@ -66,7 +66,7 @@ The person uploading sees each name, size, and whether it is in flight, retrying
 
 - This service never holds file bytes on its compute, including for “download all”.
 - Every limit is enforced here. A modified client cannot bypass any of them.
-- A download URL that has expired cannot be reused. A fresh one can be minted for the same accepted file while the transfer is live.
+- A download URL that has expired cannot be reused. A fresh one can be minted for the same accepted file while that viewer's capability permits access. Public access requires a live transfer; retained private access follows the requesting/agent contract.
 - Infected and failed-scan files never receive a download URL.
 - A skipped-too-large file is never described as clean.
 - Destroying a transfer destroys its files. Another transfer’s files are not touched.
@@ -85,7 +85,7 @@ The person uploading sees each name, size, and whether it is in flight, retrying
 | Yes | Yes | **No** | Any | Yes | Refused — transfer too large |
 | Any | Any | Any | Any | **No** | Refused — closed |
 
-### Whether a stored file can be downloaded
+### Whether a stored file can be downloaded through a public send link
 
 | Scan | Transfer live | Outcome |
 | --- | --- | --- |
@@ -95,6 +95,8 @@ The person uploading sees each name, size, and whether it is in flight, retrying
 | Failed | Yes | No URL |
 | Still scanning | Yes | No URL |
 | Any | **No** | No URL |
+
+Private agent access to retained accepted files follows Requesting files' terminal-state table, including the same scan restrictions after expiry or cancellation. This does not extend object retention.
 
 ## User Flows
 
