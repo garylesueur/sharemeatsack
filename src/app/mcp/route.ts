@@ -26,7 +26,7 @@ const mcpHandler = createMcpHandler(
   (server) => {
     server.tool(
       SHAREMEATSACK_TOOL_NAME,
-      `${PRODUCT_SENTENCE} Create a request or a send, read status, wait a bounded time, cancel, or list files. Same as the sharemeatsack.com HTTP API. This service does not send mail.`,
+      `${PRODUCT_SENTENCE} Create a request or a send, read status, wait a bounded time, cancel, list files, or merge a secondary transfer into a primary using both private agent tokens. Same as the sharemeatsack.com HTTP API. This service does not send mail.`,
       sharemeatsackToolInputShape,
       async (args) => {
         const tool = createSharemeatsackTool(getDefaultTransferService());

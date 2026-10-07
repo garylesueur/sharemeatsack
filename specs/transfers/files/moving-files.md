@@ -62,6 +62,16 @@ If the agent does not set an expiry, the transfer lasts **7 days** from create. 
 
 The person uploading sees each name, size, and whether it is in flight, retrying, or done. They can remove a file that has not been sealed yet. The agent’s status during an open request does not include download URLs.
 
+### B14 — Existing shares can be merged with both private keys 🟢 implemented
+
+The agent chooses a primary share to keep and a secondary share to empty. Both private agent tokens are required; a human link grants no merge permission. Both shares must be unexpired, sealed requests or ready sends, with uploads and scans finished. A share cannot merge into itself.
+
+All file records move together into the primary without transporting file bytes. File ids, filenames, sizes, types, and scan verdicts are preserved. Matching filenames remain distinct files. Blocked files stay blocked. Overlapping file ids are refused. Files become accessible using the primary's existing capabilities, and disappear from the secondary's file list and new file access requests. Already issued storage URLs remain usable until their own expiry.
+
+The primary keeps its kind, public and private links, title, settings, and expiry. Its count, size, total-byte, and type limits apply to the combined files. A request does not become a public download page. A refused merge changes neither share. Concurrent changes cannot lose or duplicate files or bypass limits: the agent refreshes status and retries when a merge conflicts.
+
+The secondary remains sealed and empty, with its existing expiry. Repeating a successful merge moves zero files. It is not deleted immediately and emptiness does not shorten its lifetime. Production transfer records age out under the existing retention rules; automatic file destruction remains future work under B12.
+
 ## Rules (Invariants)
 
 - This service never holds file bytes on its compute, including for “download all”.
@@ -70,6 +80,7 @@ The person uploading sees each name, size, and whether it is in flight, retrying
 - Infected and failed-scan files never receive a download URL.
 - A skipped-too-large file is never described as clean.
 - Destroying a transfer destroys its files. Another transfer’s files are not touched.
+- After a merge, moved files belong to the primary. Expiry or removal of the secondary must not destroy them, even if their storage paths contain the secondary's id.
 - Scan links given to the scanner live long enough for its retries. A one-hour link is not enough.
 
 ## Decision Tables

@@ -6,7 +6,8 @@ description: >
   paste the page link, and wait. Use when you need invoices, photos, PDFs, or
   any files from someone, or when you need to put files on meatsack or give
   them to someone. Do not mail the files yourself and do not pull large files
-  into the conversation.
+  into the conversation. Also use to merge existing share links with both
+  private management tokens.
 ---
 
 # sharemeatsack.com
@@ -39,9 +40,19 @@ There is no API key. Create is open today. The person who opens the link never s
 
 Giving `uploadUrl` or `downloadUrl` to them is **your** job. They get the same page link you would paste here. This service does not send mail and does not post to other chats. Then wait the same way as above.
 
+## Merge existing share links
+
+1. Identify the primary link to keep and each secondary link to empty. You need the private agent token from each transfer's `manageUrl` or `pollUrl`; human links alone cannot authorise a merge. Keep all private tokens out of public messages.
+2. Check `status` for both transfers. Both must be unexpired and sealed (`complete` for a request, `ready` for a send), with uploads and scans finished. Wait if either is still uploading or scanning.
+3. Call `sharemeatsack.com` with action `merge`, `transferId` and `agentToken` for the **primary**, plus `secondaryTransferId` and `secondaryAgentToken` for the **secondary**. Over HTTP, use `POST /api/v1/transfers/{primaryTransferId}/merge`, a primary `Authorization: Bearer ...` header, and JSON `{ "secondaryTransferId": "...", "secondaryAgentToken": "..." }`.
+4. The result includes `movedFileCount`, `totalFileCount`, `secondaryFileCount: 0`, the primary `downloadUrl`, and its `expiresAt`. Files move together; nothing is copied through the agent. Repeat for additional secondary links using the same primary. Duplicate filenames remain separate files. The primary's kind, links, settings, limits, and expiry stay the same; a request remains private to its agent for file access.
+5. Refresh status and retry on `merge_conflict`. Repeating a successful merge from an empty secondary moves zero files. If the combined files exceed the primary's limits, neither transfer changes. Scan verdicts stay attached and blocked files stay blocked.
+
+The secondary stays sealed and empty with its existing expiry. There is no immediate deletion operation or empty-share cleanup job. Production Redis records age out after the existing expiry/read window; automatic object deletion is still future work. Already issued storage URLs remain valid until their own expiry.
+
 ## Do not
 
-- Name extra tools. There is one tool, `sharemeatsack.com`, with actions `request`, `send`, `status`, `wait`, `cancel`, and `files`.
+- Name extra tools. There is one tool, `sharemeatsack.com`, with actions `request`, `send`, `status`, `wait`, `cancel`, `files`, and `merge`.
 - Put the agent status secret or `manageUrl` on the human page or anywhere the person should not see it.
 - Treat Slack or email posting as a feature of this product.
 - Pull a large file into the chat, or attach the files to mail yourself.

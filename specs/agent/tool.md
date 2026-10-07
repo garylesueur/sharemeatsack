@@ -12,7 +12,7 @@ An agent moves files by calling one tool named **sharemeatsack.com**, or the sam
 
 ### B1 — One tool, several actions 🟢 implemented
 
-The tool is named `sharemeatsack.com`. Its actions are `request`, `send`, `status`, `wait`, `cancel`, and `files`. There are no extra tool names. HTTP under `/api/v1/transfers` is the same product: the same payload in, the same links and status out.
+The tool is named `sharemeatsack.com`. Its actions are `request`, `send`, `status`, `wait`, `cancel`, `files`, and `merge`. There are no extra tool names. HTTP under `/api/v1/transfers` is the same product: the same payload in, the same links and status out.
 
 ### B2 — Create is open today 🟢 implemented
 
@@ -51,6 +51,12 @@ The repository root is an Agent Plugin: `plugin.json`, `mcp.json`, and `skills/`
 
 Opening `/mcp` in a browser shows a short guide. A client speaking MCP uses the same URL as Streamable HTTP. `/mcp.md`, `/skill.md`, and `/llms.txt` are the machine-readable set.
 
+### B11 — The agent merges shares without fetching their bytes 🟢 implemented
+
+Action `merge` takes `transferId` and `agentToken` for the primary share, and `secondaryTransferId` and `secondaryAgentToken` for the secondary. HTTP exposes the same operation at `POST /api/v1/transfers/{primaryTransferId}/merge`: the primary private token is the bearer capability, and the secondary id and private token are JSON fields. Neither human token authorises the operation.
+
+The result reports the primary and secondary ids, moved and total file counts, an empty secondary count, and the primary's existing download link and expiry. Additional shares can be merged with repeated calls into the same primary. [Moving files B14](../transfers/files/moving-files.md) owns merge eligibility, limits, retry, ownership, and retention rules.
+
 ## Rules (Invariants)
 
 - There is one tool name: `sharemeatsack.com`.
@@ -71,6 +77,7 @@ Opening `/mcp` in a browser shows a short guide. A client speaking MCP uses the 
 | See whether it is done | `status` or `wait` |
 | Stop it | `cancel` |
 | Get fresh download URLs | `files` |
+| Move a secondary share's files into a primary | `merge` |
 
 ## User Flows
 

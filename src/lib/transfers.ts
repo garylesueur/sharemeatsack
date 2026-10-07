@@ -21,6 +21,7 @@ import {
   registerFilesSchema,
   requestCreateSchema,
   sendCreateSchema,
+  mergeTransfersSchema,
   waitSchema,
   type TransferStatus,
 } from "./schema";
@@ -143,6 +144,16 @@ export type CancelResult = {
   status: Extract<TransferStatus, "cancelled">;
   title: string;
   message?: string;
+  expiresAt: string;
+};
+
+export type MergeResult = {
+  primaryTransferId: string;
+  secondaryTransferId: string;
+  movedFileCount: number;
+  totalFileCount: number;
+  secondaryFileCount: 0;
+  downloadUrl: string;
   expiresAt: string;
 };
 
@@ -398,7 +409,9 @@ async function markCallbackAttempted(deps: TransferServiceDeps, transfer: Transf
   if (!transfer.callbackUrl || transfer.callbackSent) {
     return;
   }
-  await deps.store.save({ ...transfer, callbackSent: true });
+  await deps.store.compareAndSave([
+    { before: transfer, after: { ...transfer, callbackSent: true } },
+  ]);
 }
 
 function requireObjectStore(
@@ -495,6 +508,11 @@ function completeView(transfer: Transfer): CompleteResult {
 export function createTransferService(deps: TransferServiceDeps) {
   const scanner = deps.scanner === undefined ? createMemoryCleanroom() : deps.scanner;
 
+  async function saveIfCurrent(before: Transfer, after: Transfer): Promise<Transfer> {
+    if (await deps.store.compareAndSave([{ before, after }])) return after;
+    return (await deps.store.getById(before.id)) ?? before;
+  }
+
   async function loadForPublic(
     transferId: string,
     publicToken: string | undefined,
@@ -532,7 +550,10 @@ export function createTransferService(deps: TransferServiceDeps) {
     transfer: Transfer,
     fileId: string,
     verdict: CleanroomVerdict,
+    expected: Transfer = transfer,
   ): Promise<Transfer> {
+    const original = transfer.files?.find((file) => file.id === fileId);
+    if (!original || isTerminalScan(original.scanStatus)) return transfer;
     const files = (transfer.files ?? []).map((file) => {
       if (file.id !== fileId || isTerminalScan(file.scanStatus)) {
         return file;
@@ -545,12 +566,17 @@ export function createTransferService(deps: TransferServiceDeps) {
       };
     });
     const target = files.find((file) => file.id === fileId);
-    if (verdict.verdict === "infected" && target?.key && deps.objectStore?.available()) {
+    const next = { ...transfer, files };
+    const saved = await saveIfCurrent(expected, next);
+    if (
+      saved === next &&
+      verdict.verdict === "infected" &&
+      target?.key &&
+      deps.objectStore?.available()
+    ) {
       await deps.objectStore.delete(target.key);
     }
-    const next = { ...transfer, files };
-    await deps.store.save(next);
-    return next;
+    return saved;
   }
 
   async function finalizeIfScanned(transfer: Transfer): Promise<Transfer> {
@@ -568,24 +594,25 @@ export function createTransferService(deps: TransferServiceDeps) {
         status: "cancelled",
         cancelledAt: deps.now().toISOString(),
       };
-      await deps.store.save(next);
-      await markCallbackAttempted(deps, next);
-      return next;
+      const saved = await saveIfCurrent(transfer, next);
+      await markCallbackAttempted(deps, saved);
+      return saved;
     }
     const next: Transfer = {
       ...transfer,
       status: transfer.kind === "send" ? "ready" : "complete",
       completedAt: deps.now().toISOString(),
     };
-    await deps.store.save(next);
-    await markCallbackAttempted(deps, next);
-    return next;
+    const saved = await saveIfCurrent(transfer, next);
+    await markCallbackAttempted(deps, saved);
+    return saved;
   }
 
-  async function submitScans(transfer: Transfer): Promise<Transfer> {
+  async function submitScans(transfer: Transfer, expected: Transfer = transfer): Promise<Transfer> {
     const store = deps.objectStore;
     let current = transfer;
     const files = [...(current.files ?? [])];
+    const infectedKeys: string[] = [];
     for (let index = 0; index < files.length; index += 1) {
       const file = files[index];
       if (
@@ -630,17 +657,19 @@ export function createTransferService(deps: TransferServiceDeps) {
           scanReason:
             submitted.verdict?.verdict === "failed" ? submitted.verdict.reason : undefined,
         };
-        await deps.store.indexScan(submitted.handle, { transferId: current.id, fileId: file.id });
         if (submitted.verdict?.verdict === "infected") {
-          await store.delete(file.key);
+          infectedKeys.push(file.key);
         }
       } catch {
         files[index] = { ...file, scanStatus: "failed", scanReason: "submit failed" };
       }
     }
     current = { ...current, files };
-    await deps.store.save(current);
-    return await finalizeIfScanned(current);
+    const saved = await saveIfCurrent(expected, current);
+    if (saved === current && store?.available()) {
+      for (const key of infectedKeys) await store.delete(key);
+    }
+    return await finalizeIfScanned(saved);
   }
 
   async function arriveAndScan(transfer: Transfer): Promise<Transfer> {
@@ -679,8 +708,8 @@ export function createTransferService(deps: TransferServiceDeps) {
       status: "scanning",
       files: accepted,
     };
-    await deps.store.save(next);
-    return await submitScans(next);
+    const saved = await saveIfCurrent(transfer, next);
+    return await submitScans(saved);
   }
 
   async function refreshScans(transfer: Transfer): Promise<Transfer> {
@@ -692,6 +721,7 @@ export function createTransferService(deps: TransferServiceDeps) {
       return { ...transfer, status };
     }
     let current: Transfer = { ...transfer, status };
+    let expected = transfer;
     if (!scanner?.available()) {
       return current;
     }
@@ -715,10 +745,11 @@ export function createTransferService(deps: TransferServiceDeps) {
         continue;
       }
       if (polled?.verdict) {
-        current = await applyVerdict(current, file.id, polled.verdict);
+        current = await applyVerdict(current, file.id, polled.verdict, expected);
+        expected = current;
       }
     }
-    return await submitScans(current);
+    return await submitScans(current, expected);
   }
 
   async function authorizeFileMutation(input: {
@@ -960,6 +991,78 @@ export function createTransferService(deps: TransferServiceDeps) {
       return { files: await filesForAgent(deps, transfer) };
     },
 
+    async merge(input: {
+      transferId: string;
+      agentToken?: string;
+      body: unknown;
+    }): Promise<MergeResult | TransferServiceError> {
+      const parsed = mergeTransfersSchema.safeParse(input.body);
+      if (!parsed.success) return invalidCreate(parsed);
+      const primary = await loadForAgent(input.transferId, input.agentToken);
+      if (isTransferServiceError(primary)) return primary;
+      const secondary = await loadForAgent(
+        parsed.data.secondaryTransferId,
+        parsed.data.secondaryAgentToken,
+      );
+      if (isTransferServiceError(secondary)) return secondary;
+      if (primary.id === secondary.id) {
+        return { code: "same_transfer", message: "Choose two different transfers", status: 400 };
+      }
+      for (const transfer of [primary, secondary]) {
+        if (
+          Date.parse(transfer.expiresAt) <= deps.now().getTime() ||
+          (transfer.status !== "complete" && transfer.status !== "ready") ||
+          (transfer.files ?? []).some(
+            (file) => file.state !== "accepted" || !isTerminalScan(file.scanStatus),
+          )
+        ) {
+          return {
+            code: "not_mergeable",
+            message: "Both transfers must be live and have finished uploading and scanning",
+            status: 409,
+          };
+        }
+      }
+      const existing = primary.files ?? [];
+      const moving = secondary.files ?? [];
+      const refusal = refuseOfferedFiles(
+        existing,
+        moving.map((file) => ({ name: file.filename, type: file.contentType, size: file.size })),
+        fileCaps(primary),
+      );
+      if (refusal) return refusal;
+      const ids = new Set(existing.map((file) => file.id));
+      if (moving.some((file) => ids.has(file.id))) {
+        return {
+          code: "file_conflict",
+          message: "File ids overlap between transfers",
+          status: 409,
+        };
+      }
+      const combined = [...existing, ...moving];
+      if (
+        !(await deps.store.compareAndSave([
+          { before: primary, after: { ...primary, files: combined } },
+          { before: secondary, after: { ...secondary, files: [] } },
+        ]))
+      ) {
+        return {
+          code: "merge_conflict",
+          message: "A transfer changed during the merge; refresh status and retry",
+          status: 409,
+        };
+      }
+      return {
+        primaryTransferId: primary.id,
+        secondaryTransferId: secondary.id,
+        movedFileCount: moving.length,
+        totalFileCount: combined.length,
+        secondaryFileCount: 0,
+        downloadUrl: urlsFor(primary).downloadUrl,
+        expiresAt: primary.expiresAt,
+      };
+    },
+
     async readFileUrl(input: {
       transferId: string;
       fileId: string;
@@ -1050,7 +1153,13 @@ export function createTransferService(deps: TransferServiceDeps) {
         status: "cancelled",
         cancelledAt: deps.now().toISOString(),
       };
-      await deps.store.save(next);
+      if (!(await deps.store.compareAndSave([{ before: existing, after: next }]))) {
+        return {
+          code: "frozen",
+          message: "Transfer changed; refresh status and retry",
+          status: 409,
+        };
+      }
       await markCallbackAttempted(deps, next);
       return cancelView(next);
     },
@@ -1119,6 +1228,9 @@ export function createTransferService(deps: TransferServiceDeps) {
       }
 
       const latest = (await deps.store.getById(transfer.id)) ?? transfer;
+      if (latest.kind !== "request" || liveStatus(latest, deps.now()) !== "open") {
+        return { code: "closed", message: "Transfer is not accepting files", status: 409 };
+      }
       const existing = latest.files ?? [];
       const offered = parsed.data.files;
       const cap = fileCaps(latest);
@@ -1160,7 +1272,17 @@ export function createTransferService(deps: TransferServiceDeps) {
           expiresAt: signed.expiresAt,
         });
       }
-      await deps.store.save({ ...latest, files: nextFiles });
+      if (
+        !(await deps.store.compareAndSave([
+          { before: latest, after: { ...latest, files: nextFiles } },
+        ]))
+      ) {
+        return {
+          code: "closed",
+          message: "Transfer changed; refresh status and retry",
+          status: 409,
+        };
+      }
       return { files: registered };
     },
 
@@ -1251,13 +1373,23 @@ export function createTransferService(deps: TransferServiceDeps) {
       if (!target) {
         return { code: "not_found", message: "Transfer not found", status: 404 };
       }
+      if (
+        !(await deps.store.compareAndSave([
+          {
+            before: transfer,
+            after: { ...transfer, files: files.filter((file) => file.id !== input.fileId) },
+          },
+        ]))
+      ) {
+        return {
+          code: "closed",
+          message: "Transfer changed; refresh status and retry",
+          status: 409,
+        };
+      }
       if (target.key && deps.objectStore?.available()) {
         await deps.objectStore.delete(target.key);
       }
-      await deps.store.save({
-        ...transfer,
-        files: files.filter((file) => file.id !== input.fileId),
-      });
       return { ok: true };
     },
 

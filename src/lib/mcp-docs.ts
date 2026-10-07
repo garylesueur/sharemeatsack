@@ -56,7 +56,7 @@ There is no API key. Create is open today. Creating will later need a lanyard ac
 ${pluginInstallMarkdown(origin)}
 ## Tool
 
-The tool is named \`${PRODUCT_NAME}\`. Actions: \`request\`, \`send\`, \`status\`, \`wait\`, \`cancel\`, \`files\`.
+The tool is named \`${PRODUCT_NAME}\`. Actions: \`request\`, \`send\`, \`status\`, \`wait\`, \`cancel\`, \`files\`, \`merge\`.
 
 POST JSON-RPC to \`${mcpUrl}\`. Do not invent extra tools, a Slack bot, or a mailer of your own.
 
@@ -84,7 +84,10 @@ Create a request and you get \`uploadUrl\`, \`pollUrl\`, and \`manageUrl\`. Crea
 - Wait: \`POST /api/v1/transfers/{transferId}/wait\` (bound at most 60 seconds; one call sits up to 50, then answers \`timedOut: true\` with \`nextAction: "wait"\` — call it again)
 - Cancel: \`POST /api/v1/transfers/{transferId}/cancel\`
 - Files: \`GET /api/v1/transfers/{transferId}/files?token=\`
+- Merge: \`POST /api/v1/transfers/{primaryTransferId}/merge\` with the primary private bearer token and JSON \`{ "secondaryTransferId": "...", "secondaryAgentToken": "..." }\`
 - Manage summary: \`GET /s/{transferId}/manage?token=\` (markdown at \`.md\`)
+
+Merge requires both private tokens and two unexpired transfers with uploads and scans finished. It moves every secondary file into the primary atomically, enforces the primary's limits, and returns \`movedFileCount\`, \`totalFileCount\`, \`secondaryFileCount: 0\`, \`downloadUrl\`, and \`expiresAt\`. The primary keeps its link, kind, settings, and expiry; the secondary stays sealed and empty until its existing retention ends. On \`merge_conflict\` (409), refresh status and retry. A retry after success moves zero files. Already issued storage URLs keep their own expiry. Automatic object cleanup is still future work.
 
 ## Do not
 
