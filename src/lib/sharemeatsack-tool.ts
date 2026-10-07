@@ -21,6 +21,7 @@ export const sharemeatsackToolActions = [
   "wait",
   "cancel",
   "files",
+  "merge",
 ] as const;
 
 export type SharemeatsackToolAction = (typeof sharemeatsackToolActions)[number];
@@ -38,6 +39,8 @@ export const sharemeatsackToolInputShape = {
   metadata: z.record(z.string(), z.string()).optional(),
   callbackUrl: z.string().url().optional(),
   agentToken: z.string().min(1).optional(),
+  secondaryTransferId: z.string().min(1).optional(),
+  secondaryAgentToken: z.string().min(1).optional(),
   files: z
     .array(
       z.object({
@@ -73,6 +76,8 @@ export function createSharemeatsackTool(transfers: TransferService) {
       metadata?: Record<string, string>;
       callbackUrl?: string;
       agentToken?: string;
+      secondaryTransferId?: string;
+      secondaryAgentToken?: string;
       files?: { name: string; type?: string; size: number }[];
     }): Promise<unknown> {
       if (input.action === "request") {
@@ -124,6 +129,17 @@ export function createSharemeatsackTool(transfers: TransferService) {
         return await transfers.listFiles({
           transferId: input.transferId,
           agentToken: input.agentToken,
+        });
+      }
+
+      if (input.action === "merge") {
+        return await transfers.merge({
+          transferId: input.transferId,
+          agentToken: input.agentToken,
+          body: {
+            secondaryTransferId: input.secondaryTransferId,
+            secondaryAgentToken: input.secondaryAgentToken,
+          },
         });
       }
 
