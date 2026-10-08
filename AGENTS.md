@@ -32,7 +32,7 @@ Always call the product **sharemeatsack.com** in user-facing copy. The agent too
 - Specs live in `specs/`. Format: `specs/README.md`. Start with `specs/transfers/requests/requesting.md`.
 - The implementation plan is `.plans/v1.md`.
 - Conventions live in `.engineering/conventions.yaml`.
-- calm-craft is vendored as a submodule at `.agents/plugins/calm-craft`.
+- Calm Craft portable skills, references and assets come from the installed `calm-craft` tooling plugin. Invoke its `calm-craft:…` skills. Keep repository skills project-specific; repository settings live in `.engineering/config.yaml`.
 - Shared brand files live in the `brand/` submodule ([meatsack-brand](https://github.com/garylesueur/meatsack-brand)).
 - The repository root is an [Agent Plugin](https://agent-plugins.org/): `plugin.json`, `mcp.json`, and `skills/`. The skill text lands in A6.
 - Implementation plans and review reports go in `.plans/` and `.reports/` (gitignored).
