@@ -52,6 +52,10 @@ function applyPreference(mode: "light" | "dark"): void {
   applyResolvedColorMode(document.documentElement, mode, mode === "dark");
   try {
     window.localStorage.setItem(COLOR_MODE_STORAGE_KEY, mode);
+  } catch {
+    // A blocked store still applies for this page.
+  }
+  try {
     document.cookie = persistColorModeCookie(
       mode,
       window.location.hostname,
