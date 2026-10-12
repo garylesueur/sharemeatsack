@@ -4,15 +4,15 @@ area: Agent / Tool
 status: partial
 ---
 
-# The sharemeatsack.com tool
+# The share.imeatsack.com tool
 
-An agent moves files by calling one tool named **sharemeatsack.com**, or the same actions over HTTP. There is no API key today. Creating will later need a lanyard account. The person on the other end of the link never signs in.
+An agent moves files by calling one tool named **share.imeatsack.com**, or the same actions over HTTP. There is no API key today. Creating will later need a lanyard account. The person on the other end of the link never signs in.
 
 ## Behaviours
 
 ### B1 — One tool, several actions 🟢 implemented
 
-The tool is named `sharemeatsack.com`. Its actions are `request`, `send`, `status`, `wait`, `cancel`, `files`, and `merge`. There are no extra tool names. HTTP under `/api/v1/transfers` is the same product: the same payload in, the same links and status out.
+The tool is named `share.imeatsack.com`. Its actions are `request`, `send`, `status`, `wait`, `cancel`, `files`, and `merge`. There are no extra tool names. HTTP under `/api/v1/transfers` is the same product: the same payload in, the same links and status out.
 
 ### B2 — Create is open today 🟢 implemented
 
@@ -45,7 +45,7 @@ After create, the agent keeps the transfer id and the agent token. `wait` sits f
 
 ### B9 — The repository is an Agent Plugin 🟢 implemented
 
-The repository root is an Agent Plugin: `plugin.json`, `mcp.json`, and `skills/`. A client that understands Agent Plugins can install it and get the hosted sharemeatsack.com MCP server plus the skill. `.cursor-plugin/plugin.json` lets Cursor add the clone as an Open Plugin from this folder.
+The repository root is an Agent Plugin: `plugin.json`, `mcp.json`, and `skills/`. A client that understands Agent Plugins can install it and get the hosted share.imeatsack.com MCP server plus the skill. `.cursor-plugin/plugin.json` lets Cursor add the clone as an Open Plugin from this folder.
 
 ### B10 — GET /mcp is docs for a browser, protocol for a client 🟢 implemented
 
@@ -59,7 +59,7 @@ The result reports the primary and secondary ids, moved and total file counts, a
 
 ## Rules (Invariants)
 
-- There is one tool name: `sharemeatsack.com`.
+- There is one tool name: `share.imeatsack.com`.
 - Tool and HTTP are the same transfers.
 - The agent token is a bearer secret. It does not appear in the human URL.
 - This service does not send mail and does not post to other chats.

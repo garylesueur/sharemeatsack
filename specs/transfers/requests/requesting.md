@@ -6,13 +6,13 @@ status: partial
 
 # Requesting files
 
-**sharemeatsack.com** is how an agent asks a person for files. Create returns an upload link to put in the conversation, or to send from an unattended job. The person opens it, drops the files, and is done. The agent learns the result by checking status, waiting a bounded time, or being called back.
+**share.imeatsack.com** is how an agent asks a person for files. Create returns an upload link to put in the conversation, or to send from an unattended job. The person opens it, drops the files, and is done. The agent learns the result by checking status, waiting a bounded time, or being called back.
 
 ## Behaviours
 
 ### B1 — Agent starts a request 🟢 implemented
 
-An agent calls the **sharemeatsack.com** tool, or sends the same JSON over HTTP, with action `request`. It sends a title, optional message, optional expiry, optional caps (how many files, how large each may be, which kinds), optional opaque metadata, and optionally a callback URL. When the request is usable, it always receives the sharemeatsack.com upload link (to put in the conversation, or anywhere else the agent already can post), a status link, and a private manage link. It also learns when the request will expire. The sharemeatsack.com tool and HTTP produce the same request.
+An agent calls the **share.imeatsack.com** tool, or sends the same JSON over HTTP, with action `request`. It sends a title, optional message, optional expiry, optional caps (how many files, how large each may be, which kinds), optional opaque metadata, and optionally a callback URL. When the request is usable, it always receives the share.imeatsack.com upload link (to put in the conversation, or anywhere else the agent already can post), a status link, and a private manage link. It also learns when the request will expire. The share.imeatsack.com tool and HTTP produce the same request.
 
 If the payload is not usable, create is refused and no upload link is returned. HTTP and the tool use the same error body: `error.code`, `error.message`, and `error.issues`.
 
@@ -26,7 +26,7 @@ When the person finishes sending a batch, that request stops accepting files. Op
 
 ### B4 — Agent can wait a bounded time 🟢 implemented
 
-The agent can wait, via the sharemeatsack.com tool or over HTTP, for up to a stated number of seconds. If the request reaches `complete`, `expired`, or `cancelled` within that time, the wait returns that result. If it is still open, the wait returns the current status — it does not hang past the bound. Someone taking ten minutes or two hours is the normal case: the agent calls `wait` again.
+The agent can wait, via the share.imeatsack.com tool or over HTTP, for up to a stated number of seconds. If the request reaches `complete`, `expired`, or `cancelled` within that time, the wait returns that result. If it is still open, the wait returns the current status — it does not hang past the bound. Someone taking ten minutes or two hours is the normal case: the agent calls `wait` again.
 
 ### B5 — Agent reads the finished file list 🟢 implemented
 
@@ -55,7 +55,7 @@ When creating a request, the agent may leave a callback URL. When status becomes
 
 ### B11 — Ask in the conversation 🟢 implemented
 
-Create always returns the upload link immediately. A skill shipped with this product tells the agent to confirm who the person is, call the **sharemeatsack.com** tool, put that link where they will see it, and wait. If the person is not in that conversation, the agent posts the same link itself (Slack, email, and so on). That post is the agent’s job, not this service.
+Create always returns the upload link immediately. A skill shipped with this product tells the agent to confirm who the person is, call the **share.imeatsack.com** tool, put that link where they will see it, and wait. If the person is not in that conversation, the agent posts the same link itself (Slack, email, and so on). That post is the agent’s job, not this service.
 
 ### B12 — Owner can inspect on a private manage link 🟢 implemented
 
@@ -106,7 +106,7 @@ If the agent set a maximum number of files, a maximum size, or accepted kinds, t
 
 ## Open Questions
 
-- **Settled:** The product is **sharemeatsack.com**. The tool is named **sharemeatsack.com**. Upload links look like `https://sharemeatsack.com/s/…`.
+- **Settled:** The product is **share.imeatsack.com**. The tool is named **share.imeatsack.com**. Upload links look like `https://share.imeatsack.com/s/…`.
 - **Settled:** One batch seals the request. FileSnare-style repeat visits after a finished send are a new request.
 - **Settled:** Giving the upload link to the person is the calling agent’s job. This service does not email or Slack them.
 - **Settled:** The agent confirms who the person is before creating, using whatever it already knows. This product has no contacts book.
@@ -123,5 +123,5 @@ If the agent set a maximum number of files, a maximum size, or accepted kinds, t
 - Asking the person who opens the upload link to sign in.
 - Email, Slack, or any other delivery of the link.
 - Running our own sign-in. Accounts live in lanyard; creating will later need a token (see the tool spec).
-- Folding this into askmeatsack.com. A questionnaire with evidence is a different product.
+- Folding this into ask.imeatsack.com. A questionnaire with evidence is a different product.
 - FileSnare’s dashboard, contacts, reminders, or custom domains.

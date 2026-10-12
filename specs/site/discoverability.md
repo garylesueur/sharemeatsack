@@ -6,13 +6,13 @@ status: implemented
 
 # Site discoverability
 
-Public pages tell search engines, answer engines, and agents what sharemeatsack.com is. Transfer links stay private.
+Public pages tell search engines, answer engines, and agents what share.imeatsack.com is. Transfer links stay private.
 
 ## Behaviours
 
 ### B1 — Home carries ordinary share metadata 🟢 implemented
 
-The home page has a title, description, canonical URL, and Open Graph tags naming sharemeatsack.com.
+The home page has a title, description, canonical URL, and Open Graph tags naming share.imeatsack.com.
 
 Browser tabs and phone home-screen bookmarks use the product’s Meatsack
 character icon and its ask, show, or share badge. `public/plugin-icon.png` owns
@@ -30,11 +30,11 @@ Crawlers can fetch a sitemap of the public documents (home, MCP page, markdown g
 
 ### B4 — Pasting the MCP URL yields a guide 🟢 implemented
 
-Opening `https://sharemeatsack.com/mcp` in a browser shows a short HTML page with the MCP URL and links to the markdown guide, skill, and Cursor plugin. Fetching that same URL as markdown, or fetching `/mcp.md`, returns a markdown API guide.
+Opening `https://share.imeatsack.com/mcp` in a browser shows a short HTML page with the MCP URL and links to the markdown guide, skill, and Cursor plugin. Fetching that same URL as markdown, or fetching `/mcp.md`, returns a markdown API guide.
 
 ### B5 — The skill is on the site 🟢 implemented
 
-`/skill.md` is the sharemeatsack.com skill and matches the skill shipped for Cursor.
+`/skill.md` is the share.imeatsack.com skill and matches the skill shipped for Cursor.
 
 ### B6 — Transfer pages are not for search 🟢 implemented
 
@@ -46,9 +46,9 @@ The repository root is an Agent Plugin. `.cursor-plugin/plugin.json` is present 
 
 ### B8 — Plugins share a Meatsack marketplace 🟢 implemented
 
-The Meatsack marketplace lists askmeatsack.com, showmeatsack.com, and
-sharemeatsack.com as independently installable plugins. This product's plugin
-ID is `sharemeatsack`; its listing name and tool name remain **sharemeatsack.com**.
+The Meatsack marketplace lists ask.imeatsack.com, show.imeatsack.com, and
+share.imeatsack.com as independently installable plugins. This product's plugin
+ID is `sharemeatsack`; its listing name and tool name remain **share.imeatsack.com**.
 The product repository owns its manifest, skill, hosted MCP configuration, and
 logo. The marketplace sync copies a minimal package from those sources.
 

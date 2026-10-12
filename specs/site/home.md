@@ -6,7 +6,7 @@ status: implemented
 
 # The home page
 
-What a person sees when they arrive at sharemeatsack.com without knowing what it is. Its job is to explain the product, prove it, and get an agent connected.
+What a person sees when they arrive at share.imeatsack.com without knowing what it is. Its job is to explain the product, prove it, and get an agent connected.
 
 ## Behaviours
 
@@ -26,9 +26,16 @@ A person can add the MCP server to their client without copying anything, wherev
 
 The home page, the MCP guide, and the skill are public. Opening a transfer link still needs the unguessable URL; those pages are not listed here.
 
+### B5 — The page connects the I, Meatsack family 🟢 implemented
+
+The header links I, Meatsack to `https://imeatsack.com` and offers Ask, Share and
+Show at their canonical subdomains on desktop and mobile. Share is underlined
+and identified with `aria-current`. The same header is used on installation and
+transfer pages. GitHub, the author and the agent documents are in the footer.
+
 ## Rules (Invariants)
 
-- The product is always called **sharemeatsack.com** on this page.
+- The product is always called **share.imeatsack.com** on this page.
 - Transfer links are not listed on the home page and are not for search.
 
 ## Decision Tables
@@ -41,7 +48,7 @@ _None._
 
 ## Open Questions
 
-- Brand themes matching askmeatsack.com. **Settled:** the home uses the shared meatsack-brand shell (wordmark, sibling pill, hero, seam, steps, use cases, curl) with the iron accent. The hero is the character-guide plate scene.
+- Brand themes matching ask.imeatsack.com. **Settled:** the home uses the shared meatsack-brand shell (I, Meatsack family navigation, hero, seam, steps, use cases, curl) with the iron accent. The hero is the character-guide plate scene.
 
 ## Future Considerations
 

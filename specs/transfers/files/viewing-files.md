@@ -6,7 +6,7 @@ status: implemented
 
 # Viewing files
 
-On **sharemeatsack.com**, a person can view, play or read an authorised file and download its original. A single file opens directly; several files form a browsable collection with a viewer for the selected item.
+On **share.imeatsack.com**, a person can view, play or read an authorised file and download its original. A single file opens directly; several files form a browsable collection with a viewer for the selected item.
 
 ## Behaviours
 

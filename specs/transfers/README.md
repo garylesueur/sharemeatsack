@@ -1,6 +1,6 @@
 # Transfers
 
-**sharemeatsack.com** — an agent moves files between itself and a person. The tool is named sharemeatsack.com. Create returns a link; the calling agent delivers it. This service does not send mail and does not post to other chats.
+**share.imeatsack.com** — an agent moves files between itself and a person. The tool is named share.imeatsack.com. Create returns a link; the calling agent delivers it. This service does not send mail and does not post to other chats.
 
 | Spec | Covers | Status |
 | --- | --- | --- |
