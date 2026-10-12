@@ -16,8 +16,17 @@ export function llmsTxt(origin = publicOrigin()): string {
 
 ${PRODUCT_NAME} is how an agent shares files with a person, or gets files from a person. Create returns a human link and a private manage link. The agent delivers the link. MCP and HTTP are the same transfer.
 
+## I, Meatsack family
+
+- [I, Meatsack](https://imeatsack.com): Ask, Share and Show.
+- [Ask](https://ask.imeatsack.com/llms.txt): Questionnaires for human input.
+- [Share](https://share.imeatsack.com/llms.txt): Send and request files.
+- [Show](https://show.imeatsack.com/llms.txt): Publish pages and workbooks.
+
 ## Docs
 
+- [Homepage in Markdown](${origin}/index.md): Product overview and family navigation.
+- [Complete documentation](${origin}/llms-full.txt): Overview, installation, skill and API guide.
 - [Install plugin](${origin}/install): Marketplace setup for Codex, Claude Code, and Cursor
 - [Skill](${origin}/skill.md): How to use the ${PRODUCT_NAME} tool
 - [MCP and HTTP](${origin}/mcp.md): Connect, actions, curl
@@ -194,4 +203,84 @@ export function plainTextResponse(body: string): Response {
   return new Response(body, {
     headers: { "content-type": "text/plain; charset=utf-8" },
   });
+}
+
+export function homepageMarkdown(origin = publicOrigin()): string {
+  return `# ${SITE_TITLE}
+
+> ${SITE_TAGLINE} ${SITE_DESCRIPTION}
+
+Part of [I, Meatsack](https://imeatsack.com). The shared navigation offers
+[Ask](https://ask.imeatsack.com), [Share](https://share.imeatsack.com) and
+[Show](https://show.imeatsack.com), with this product selected.
+
+## Connect your agent
+
+- [Install plugin](${origin}/install): Codex, Claude Code and Cursor setup.
+- [MCP and HTTP guide](${origin}/mcp.md): Actions, payloads and examples.
+- [Workflow skill](${origin}/skill.md): How an agent uses this product.
+- [MCP endpoint](${origin}/mcp)
+- [Documentation index](${origin}/llms.txt)
+- [Complete documentation](${origin}/llms-full.txt)
+
+The agent delivers the human link. Each product has its own MCP server;
+I, Meatsack is the shared home, with no combined MCP endpoint.
+
+Built by [Gary Le Sueur](https://gaz.dev).
+[Source](${CURSOR_PLUGIN_HREF}) · [Marketplace](${MARKETPLACE_HREF})
+Canonical home: ${origin}/
+`;
+}
+
+export function llmsFullTxt(origin = publicOrigin()): string {
+  return `${homepageMarkdown(origin)}\n---\n\n${mcpGuideMarkdown(origin)}`;
+}
+
+export function discoveryTextResponse(body: string, contentType: string): Response {
+  const origin = publicOrigin();
+  return new Response(body, {
+    headers: {
+      "Content-Type": `${contentType}; charset=utf-8`,
+      "Cache-Control": "public, max-age=0, s-maxage=3600",
+      "X-Robots-Tag": "noindex, follow",
+      Link: `<${origin}/>; rel="canonical", <${origin}/llms.txt>; rel="describedby"; type="text/plain"`,
+    },
+  });
+}
+
+export function siteJsonLd(origin = publicOrigin()) {
+  const author = { "@type": "Person", name: "Gary Le Sueur", url: "https://gaz.dev" };
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": `${origin}/#website`,
+        name: SITE_TITLE,
+        url: origin,
+        description: SITE_DESCRIPTION,
+        inLanguage: "en-GB",
+        publisher: author,
+        isPartOf: {
+          "@type": "WebSite",
+          "@id": "https://imeatsack.com/#website",
+          name: "I, Meatsack",
+          url: "https://imeatsack.com",
+        },
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": `${origin}/#application`,
+        name: SITE_TITLE,
+        url: origin,
+        applicationSuite: "I, Meatsack",
+        applicationCategory: "DeveloperApplication",
+        operatingSystem: "Web",
+        description: `${SITE_TAGLINE} ${SITE_DESCRIPTION}`,
+        author,
+        sameAs: [CURSOR_PLUGIN_HREF],
+        offers: { "@type": "Offer", price: "0", priceCurrency: "GBP" },
+      },
+    ],
+  };
 }
