@@ -20,11 +20,18 @@ function subscribe(listener: () => void): () => void {
   listeners.add(listener);
   const media = window.matchMedia("(prefers-color-scheme: dark)");
   media.addEventListener("change", listener);
-  window.addEventListener("storage", listener);
+  const onStorage = (event: StorageEvent) => {
+    if (event.key !== null && event.key !== COLOR_MODE_STORAGE_KEY) return;
+    const mode = isStoredColorMode(event.newValue) ? event.newValue : "auto";
+    const isDark = mode === "dark" || (mode === "auto" && media.matches);
+    applyResolvedColorMode(document.documentElement, mode, isDark);
+    listener();
+  };
+  window.addEventListener("storage", onStorage);
   return () => {
     listeners.delete(listener);
     media.removeEventListener("change", listener);
-    window.removeEventListener("storage", listener);
+    window.removeEventListener("storage", onStorage);
   };
 }
 
