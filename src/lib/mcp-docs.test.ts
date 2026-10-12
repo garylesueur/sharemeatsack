@@ -25,17 +25,17 @@ describe("agent docs", () => {
   it("treats a browser Accept as HTML and markdown Accept as the guide", () => {
     expect(
       mcpGetDocumentKind(
-        new Request("https://sharemeatsack.com/mcp", { headers: { accept: "text/html" } }),
+        new Request("https://share.imeatsack.com/mcp", { headers: { accept: "text/html" } }),
       ),
     ).toBe("html");
     expect(
       mcpGetDocumentKind(
-        new Request("https://sharemeatsack.com/mcp", { headers: { accept: "text/markdown" } }),
+        new Request("https://share.imeatsack.com/mcp", { headers: { accept: "text/markdown" } }),
       ),
     ).toBe("markdown");
     expect(
       mcpGetDocumentKind(
-        new Request("https://sharemeatsack.com/mcp", {
+        new Request("https://share.imeatsack.com/mcp", {
           headers: { "mcp-protocol-version": "2025-03-26" },
         }),
       ),

@@ -25,7 +25,7 @@ export default function InstallPage() {
       <SiteShell
         wordmark={PLUGIN_INSTALL.displayName}
         repoHref={CURSOR_PLUGIN_HREF}
-        sibling={{ name: "askmeatsack.com", href: "https://askmeatsack.com" }}
+        sibling={{ name: "ask.imeatsack.com", href: "https://ask.imeatsack.com" }}
         docs={[
           { label: "Install plugin", href: "/install" },
           { label: "skill.md", href: "/skill.md" },

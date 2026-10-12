@@ -21,11 +21,11 @@ function isolated() {
   };
 }
 
-describe("B1 — one tool named sharemeatsack.com", () => {
+describe("B1 — one tool named share.imeatsack.com", () => {
   it("uses the product name as the only tool name", () => {
     const { tool } = isolated();
     expect(tool.name).toBe(SHAREMEATSACK_TOOL_NAME);
-    expect(tool.name).toBe("sharemeatsack.com");
+    expect(tool.name).toBe("share.imeatsack.com");
   });
 });
 

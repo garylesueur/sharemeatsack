@@ -2,7 +2,7 @@ export const MARKETPLACE_REPOSITORY = "garylesueur/meatsack-marketplace";
 export const MARKETPLACE_HREF = `https://github.com/${MARKETPLACE_REPOSITORY}`;
 
 export const PLUGIN_INSTALL = {
-  displayName: "sharemeatsack.com",
+  displayName: "share.imeatsack.com",
   examplePrompt: "Request the files you need from me.",
   codex: `codex plugin marketplace add ${MARKETPLACE_REPOSITORY}`,
   claudeMarketplace: `/plugin marketplace add ${MARKETPLACE_REPOSITORY}`,
@@ -11,12 +11,12 @@ export const PLUGIN_INSTALL = {
   cursor: `git clone ${MARKETPLACE_HREF}.git\nmkdir -p ~/.cursor/plugins/local/sharemeatsack\ncp -R meatsack-marketplace/plugins/sharemeatsack/. ~/.cursor/plugins/local/sharemeatsack/`,
 };
 
-export function pluginInstallMarkdown(origin = "https://sharemeatsack.com"): string {
+export function pluginInstallMarkdown(origin = "https://share.imeatsack.com"): string {
   return `## Install plugin
 
 Use the [installation guide](${origin}/install) for step-by-step setup and copyable commands.
 
-The [Meatsack marketplace](${MARKETPLACE_HREF}) includes askmeatsack.com, showmeatsack.com, and sharemeatsack.com. Each plugin packages its hosted MCP connection and workflow skill. Install the ones you need.
+The [Meatsack marketplace](${MARKETPLACE_HREF}) includes ask.imeatsack.com, show.imeatsack.com, and share.imeatsack.com. Each plugin packages its hosted MCP connection and workflow skill. Install the ones you need.
 
 ### Codex
 

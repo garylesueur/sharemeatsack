@@ -59,7 +59,7 @@ export function createReadResolver(
           !Number.isFinite(Date.parse(data.expiresAt))
         )
           throw new FileAccessError(502);
-        const parsed = new URL(data.url, "https://sharemeatsack.com");
+        const parsed = new URL(data.url, "https://share.imeatsack.com");
         if (!["https:", "http:"].includes(parsed.protocol)) throw new FileAccessError(502);
         const result = { url: data.url, expiresAt: data.expiresAt };
         cache.set(key, result);

@@ -1,4 +1,4 @@
-# sharemeatsack.com
+# share.imeatsack.com
 
 **An agent shares files with a person, or gets files from a person.**
 
@@ -8,8 +8,8 @@ API key. Create is open today.
 
 Posting the link to Slack, email, or anywhere else is the calling agent's job.
 
-Sibling projects: [askmeatsack.com](https://github.com/garylesueur/askmeatsack) —
-an agent asks, a person answers. [showmeatsack.com](https://github.com/garylesueur/showmeatsack) —
+Sibling projects: [ask.imeatsack.com](https://github.com/garylesueur/askmeatsack) —
+an agent asks, a person answers. [show.imeatsack.com](https://github.com/garylesueur/showmeatsack) —
 an agent posts a page, a person opens it.
 
 An agent creates a request or a send. A person opens the page and uploads or
@@ -46,8 +46,7 @@ are the merge gates — see `.engineering/config.yaml`.
 
 ## Secrets
 
-Three 1Password items live in the **Agents** vault: `sharemeatsack.com
-Development`, `sharemeatsack.com Preview`, and `sharemeatsack.com Production`.
+Three 1Password items live in the **Agents** vault: `y4tyhoe2snpl2eki4baltvlmwi`, `otnqsmx6g7jpkrq2ttqlj7m4fu`, and `wsx7fzegvrckenlgc4ov7zt25m`.
 Same field names, different values. Local work uses Development only.
 
 `.env.development.tpl`, `.env.preview.tpl`, and `.env.production.tpl` hold
@@ -57,7 +56,7 @@ Same field names, different values. Local work uses Development only.
 ## Plugin marketplace
 
 The plugin ID is `sharemeatsack`; its display name and MCP tool name are
-**sharemeatsack.com**. The portable manifest includes OpenAI listing metadata and
+**share.imeatsack.com**. The portable manifest includes OpenAI listing metadata and
 icons; `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json` provide
 client compatibility.
 
@@ -72,7 +71,7 @@ Codex:
 codex plugin marketplace add garylesueur/meatsack-marketplace
 ```
 
-Then install **sharemeatsack.com** from the Meatsack source in Plugins.
+Then install **share.imeatsack.com** from the Meatsack source in Plugins.
 
 Claude Code:
 
@@ -84,7 +83,7 @@ Claude Code:
 Cursor Teams/Enterprise: Dashboard → Plugins & MCPs → Add Marketplace →
 Import from Repo, using the marketplace repository URL. Install the product
 from Customize. For a personal account, copy the plugin package into `~/.cursor/plugins/local/`.
-See the [installation guide](https://sharemeatsack.com/install) for commands.
+See the [installation guide](https://share.imeatsack.com/install) for commands.
 
 Marketplace publication must precede deploying these website install links.
 Public ChatGPT/Codex and Cursor directory listings require separate submissions.

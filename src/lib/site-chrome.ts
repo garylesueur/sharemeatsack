@@ -3,8 +3,8 @@ import { PRODUCT_NAME } from "./product";
 import { publicOrigin } from "./public-origin";
 
 export const SIBLING = {
-  name: "askmeatsack.com",
-  href: "https://askmeatsack.com",
+  name: "ask.imeatsack.com",
+  href: "https://ask.imeatsack.com",
 } as const;
 
 export function siteChromeProps() {

@@ -27,7 +27,7 @@ describe("Viewing B3–B5/B7 — collection and safe type selection", () => {
     ).toEqual(["one", "three"]);
   });
   it("refuses to restore foreign or filtered-out selections and ignores invalid view state", () => {
-    const url = new URL("https://sharemeatsack.com/s/test?file=one&type=markdown&view=evil");
+    const url = new URL("https://share.imeatsack.com/s/test?file=one&type=markdown&view=evil");
     expect(stateFromUrl(url, files)).toMatchObject({
       selected: null,
       view: "list",
@@ -37,7 +37,7 @@ describe("Viewing B3–B5/B7 — collection and safe type selection", () => {
     expect(stateFromUrl(url, files)).toMatchObject({ selected: null, filter: "all" });
   });
   it("keeps existing capability context without adding credentials to new view fields", () => {
-    const url = new URL("https://sharemeatsack.com/s/test/manage?token=private-fixture");
+    const url = new URL("https://share.imeatsack.com/s/test/manage?token=private-fixture");
     const next = stateUrl(url, { ...defaultBrowserState(files), selected: "two", view: "grid" });
     expect(next.pathname).toBe(url.pathname);
     expect(next.searchParams.get("token")).toBe("private-fixture");

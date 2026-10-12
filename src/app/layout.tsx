@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   },
   description: `${PRODUCT_SENTENCE} ${SITE_DESCRIPTION}`,
   applicationName: PRODUCT_NAME,
-  keywords: ["sharemeatsack.com", "MCP", "file transfer", "agent", "human in the loop"],
+  keywords: ["share.imeatsack.com", "MCP", "file transfer", "agent", "human in the loop"],
   authors: [{ name: PRODUCT_NAME, url: origin }],
   alternates: {
     canonical: "/",

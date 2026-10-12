@@ -17,9 +17,9 @@ describe("secret environments", () => {
     expect(OP_VAULT_NAME).toBe("Agents");
     expect(OP_VAULT_DEFAULT).toBe("mep374l3cpdtzwibf5fswsimbi");
     expect(secretEnvItems).toEqual({
-      development: "sharemeatsack.com Development",
-      preview: "sharemeatsack.com Preview",
-      production: "sharemeatsack.com Production",
+      development: "y4tyhoe2snpl2eki4baltvlmwi",
+      preview: "otnqsmx6g7jpkrq2ttqlj7m4fu",
+      production: "wsx7fzegvrckenlgc4ov7zt25m",
     });
     expect(envTemplateFiles).toEqual({
       development: ".env.development.tpl",
@@ -29,23 +29,23 @@ describe("secret environments", () => {
   });
 
   it("pins local work to the Development item", () => {
-    expect(itemForLocalDev()).toBe("sharemeatsack.com Development");
+    expect(itemForLocalDev()).toBe("y4tyhoe2snpl2eki4baltvlmwi");
   });
 
   it("maps Vercel targets to their own items and refuses Development", () => {
-    expect(itemForVercelTarget("preview")).toBe("sharemeatsack.com Preview");
-    expect(itemForVercelTarget("production")).toBe("sharemeatsack.com Production");
+    expect(itemForVercelTarget("preview")).toBe("otnqsmx6g7jpkrq2ttqlj7m4fu");
+    expect(itemForVercelTarget("production")).toBe("wsx7fzegvrckenlgc4ov7zt25m");
     expect(parseVercelSecretTarget("preview")).toBe("preview");
     expect(parseVercelSecretTarget("production")).toBe("production");
     expect(() => parseVercelSecretTarget("development")).toThrow(/Development stays in 1Password/);
   });
 
   it("builds op:// references without embedding values", () => {
-    expect(opSecretReference(OP_VAULT_DEFAULT, "sharemeatsack.com Preview", "AGENT_API_KEY")).toBe(
-      "op://mep374l3cpdtzwibf5fswsimbi/sharemeatsack.com Preview/AGENT_API_KEY",
+    expect(opSecretReference(OP_VAULT_DEFAULT, "otnqsmx6g7jpkrq2ttqlj7m4fu", "AGENT_API_KEY")).toBe(
+      "op://mep374l3cpdtzwibf5fswsimbi/otnqsmx6g7jpkrq2ttqlj7m4fu/AGENT_API_KEY",
     );
     expect(opTemplateReference(secretEnvItems.development, "AGENT_API_KEY")).toBe(
-      "op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/sharemeatsack.com Development/AGENT_API_KEY",
+      "op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/y4tyhoe2snpl2eki4baltvlmwi/AGENT_API_KEY",
     );
     expect(secretKeys).toContain("AGENT_API_KEY");
     expect(secretKeys).toContain("R2_SECRET_ACCESS_KEY");
