@@ -1,0 +1,281 @@
+diff --git a/Dockerfile b/Dockerfile
+index a7399bc..4aaed80 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -27,9 +27,13 @@ RUN sed -i \
+       -e 's/^LocalSocketGroup /#LocalSocketGroup /' \
+       -e 's/^LocalSocketMode /#LocalSocketMode /' \
+       -e 's/^FixStaleSocket /#FixStaleSocket /' \
++      -e '/^StreamMaxLength[[:space:]]/d' \
++      -e '/^MaxFileSize[[:space:]]/d' \
++      -e '/^MaxScanSize[[:space:]]/d' \
++      -e '/^AlertExceedsMax[[:space:]]/d' \
+       /etc/clamav/clamd.conf && \
+     sed -i 's/^Example$//' /etc/clamav/freshclam.conf && \
+-    printf "TCPSocket 3310\nTCPAddr 127.0.0.1\nMaxThreads 4\nStreamMaxLength 500M\n" \
++    printf "TCPSocket 3310\nTCPAddr 127.0.0.1\nMaxThreads 4\nStreamMaxLength 500M\nMaxFileSize 500M\nMaxScanSize 500M\nAlertExceedsMax yes\n" \
+       >> /etc/clamav/clamd.conf
+ 
+ # Pull signatures at build time so a fresh container boots ready rather than
+diff --git a/scripts/render-flow.mjs b/scripts/render-flow.mjs
+new file mode 100644
+index 0000000..09060da
+--- /dev/null
++++ b/scripts/render-flow.mjs
+@@ -0,0 +1,21 @@
++import { readFile, writeFile } from "node:fs/promises";
++import { basename } from "node:path";
++import { parse } from "yaml";
++
++const path = "specs/scanning/files/scanning-a-file.flow.yaml";
++const contract = parse(await readFile(path, "utf8"));
++const lines = [`%% Generated from ${basename(path)}. Do not edit directly.`, "stateDiagram-v2"];
++for (const flow of contract.flows) {
++  const stateId = (id) => `${flow.id}_${id}`;
++  lines.push(`    [*] --> ${stateId(flow.start)}`, "");
++  for (const state of flow.states) lines.push(`    ${stateId(state.id)}: ${state.label}`);
++  lines.push("");
++  for (const transition of flow.transitions)
++    lines.push(
++      `    ${stateId(transition.from)} --> ${stateId(transition.to)}: ${transition.event}`,
++    );
++  lines.push("");
++  for (const state of flow.states.filter((candidate) => candidate.kind === "terminal"))
++    lines.push(`    ${stateId(state.id)} --> [*]`);
++}
++await writeFile(path.replace(/\.yaml$/, ".mmd"), `${lines.join("\n")}\n`);
+diff --git a/specs/scanning/files/scanning-a-file.flow.yaml b/specs/scanning/files/scanning-a-file.flow.yaml
+index ed986fb..1ff49ce 100644
+--- a/specs/scanning/files/scanning-a-file.flow.yaml
++++ b/specs/scanning/files/scanning-a-file.flow.yaml
+@@ -46,6 +46,14 @@ flows:
+         outcome: The verdict stands and the caller can still read it by asking about the handle.
+ 
+     transitions:
++      - id: F1.T15
++        from: scanning
++        event: File is above the size cleanroom scans
++        to: telling
++        guard: The scanner reports a stream or file size limit.
++        outcome: The file is reported too large without retries or a clean verdict.
++        covers: [B6]
++
+       - id: F1.T1
+         from: submitted
+         event: Handle accepted
+diff --git a/specs/scanning/files/scanning-a-file.md b/specs/scanning/files/scanning-a-file.md
+index 1a0e43a..20057a9 100644
+--- a/specs/scanning/files/scanning-a-file.md
++++ b/specs/scanning/files/scanning-a-file.md
+@@ -46,6 +46,9 @@ The caller decides what to do with the file; cleanroom cannot reach it.
+ A file above the size cleanroom can scan is reported as skipped rather than scanned. The caller
+ is told that is why. It is never silently reported clean.
+ 
++A stream or file size limit reported by the scanner also settles as **too large** immediately,
++even when the submitted size was within the nominal cap. Retrying cannot make that file smaller.
++
+ ### B7 — A scan that cannot finish still reaches an answer 🟢 implemented
+ 
+ If the link cannot be fetched, or the scanner fails, cleanroom tries again. After the last
+@@ -128,6 +131,8 @@ keeps the handle and the verdict only, and only for as long as a caller might re
+ - **F1 — A file through cleanroom:** [contract](./scanning-a-file.flow.yaml) ·
+   [diagram](./scanning-a-file.flow.mmd) — covers B1–B9
+ 
++Regenerate the diagram with `node scripts/render-flow.mjs`.
++
+ ## Open Questions
+ 
+ - **Settled:** Thirty days. Long enough for a caller to recover from a long outage, short
+diff --git a/src/domain/flow.ts b/src/domain/flow.ts
+index 3810e1f..0b35fe5 100644
+--- a/src/domain/flow.ts
++++ b/src/domain/flow.ts
+@@ -104,6 +104,15 @@ export type FlowTransition = {
+ };
+ 
+ export const FLOW_TRANSITIONS: readonly FlowTransition[] = [
++  {
++    id: "F1.T15",
++    from: "scanning",
++    event: FLOW_EVENTS.ABOVE_SIZE,
++    to: "telling",
++    guard: "The scanner reports a stream or file size limit.",
++    outcome: "The file is reported too large without retries or a clean verdict.",
++    covers: ["B6"],
++  },
+   {
+     id: "F1.T1",
+     from: "submitted",
+diff --git a/src/domain/scan-record.test.ts b/src/domain/scan-record.test.ts
+index 9995d89..bfff3e0 100644
+--- a/src/domain/scan-record.test.ts
++++ b/src/domain/scan-record.test.ts
+@@ -93,6 +93,16 @@ describe("accepting a submission", () => {
+ });
+ 
+ describe("scanning", () => {
++  it("settles a scanner size limit immediately without retrying", () => {
++    const record = readyToTell({ status: "too-large" });
++    expect(record.state).toBe("telling");
++    expect(record.verdict).toEqual({
++      verdict: "too-large",
++      declaredSizeBytes: submission.declaredSizeBytes,
++      capBytes: SCAN_SIZE_CAP_BYTES,
++    });
++    expect(record.nextRunAt?.getTime()).toBe(now.getTime());
++  });
+   it("B4 — nothing matched becomes a clean verdict awaiting delivery", () => {
+     const record = readyToTell({ status: "clean" });
+     expect(record.state).toBe("telling");
+diff --git a/src/domain/scan-record.ts b/src/domain/scan-record.ts
+index 0f69728..57322f1 100644
+--- a/src/domain/scan-record.ts
++++ b/src/domain/scan-record.ts
+@@ -5,7 +5,7 @@ import {
+   type DeliveryOutcome,
+ } from "./delivery.js";
+ import { FLOW_EVENTS, step, type FlowEvent, type FlowStateId } from "./flow.js";
+-import { checkDeclaredSize } from "./limits.js";
++import { checkDeclaredSize, SCAN_SIZE_CAP_BYTES } from "./limits.js";
+ import { answerableUntil, isAnswerable } from "./retention.js";
+ import { submissionKeyFor, type Submission } from "./submission.js";
+ import { failedVerdict, type Verdict } from "./verdicts.js";
+@@ -35,6 +35,7 @@ export type ScanRecord = {
+ /** What the scanner came back with for one attempt. */
+ export type ScanOutcome =
+   | { status: "clean" }
++  | { status: "too-large" }
+   | { status: "infected"; signature: string }
+   | { status: "error"; message: string };
+ 
+@@ -121,6 +122,18 @@ export function beginScan(record: ScanRecord): ScanRecord {
+  * a handle never sits unanswered forever (B7).
+  */
+ export function recordScanOutcome(record: ScanRecord, outcome: ScanOutcome, now: Date): ScanRecord {
++  if (outcome.status === "too-large") {
++    return {
++      ...record,
++      state: advance(record, FLOW_EVENTS.ABOVE_SIZE),
++      verdict: {
++        verdict: "too-large",
++        declaredSizeBytes: record.declaredSizeBytes,
++        capBytes: SCAN_SIZE_CAP_BYTES,
++      },
++      nextRunAt: now,
++    };
++  }
+   if (outcome.status === "clean") {
+     return {
+       ...record,
+diff --git a/src/scanner/clamav.test.ts b/src/scanner/clamav.test.ts
+index df57f86..18a3290 100644
+--- a/src/scanner/clamav.test.ts
++++ b/src/scanner/clamav.test.ts
+@@ -28,11 +28,22 @@ describe("reading clamd's answer", () => {
+ 
+   it("B7 — anything unrecognised is an error, never a quiet clean", () => {
+     // A file must never be reported clean because we could not read the reply.
+-    expect(parseClamdResponse("INSTREAM size limit exceeded ERROR\0").status).toBe("error");
+     expect(parseClamdResponse("").status).toBe("error");
+     expect(parseClamdResponse("\0").status).toBe("error");
+     expect(parseClamdResponse("something entirely unexpected").status).toBe("error");
+   });
++
++  it("reports scanner size limits as too large, without a clean or infected verdict", () => {
++    expect(parseClamdResponse("INSTREAM size limit exceeded ERROR\0")).toEqual({
++      status: "too-large",
++    });
++    expect(parseClamdResponse("stream: Heuristics.Limits.Exceeded.MaxFileSize FOUND\0")).toEqual({
++      status: "too-large",
++    });
++    expect(parseClamdResponse("stream: Heuristics.Limits.Exceeded.MaxScanSize FOUND\0")).toEqual({
++      status: "too-large",
++    });
++  });
+ });
+ 
+ describe("fetching the link", () => {
+diff --git a/src/scanner/clamav.ts b/src/scanner/clamav.ts
+index 08283bb..5132dd1 100644
+--- a/src/scanner/clamav.ts
++++ b/src/scanner/clamav.ts
+@@ -13,6 +13,7 @@ import { SCAN_CHUNK_BYTES, SCAN_IDLE_TIMEOUT_MS, SCAN_TOTAL_TIMEOUT_MS } from ".
+  */
+ export type ClamdVerdict =
+   | { status: "clean" }
++  | { status: "too-large" }
+   | { status: "infected"; signature: string; rawResponse: string }
+   | { status: "error"; message: string; rawResponse?: string };
+ 
+@@ -203,6 +204,13 @@ export function parseClamdResponse(raw: string): ClamdVerdict {
+   // clamd terminates responses with NUL; stripping it is the point.
+   const trimmed = raw.replace(/\0/g, "").trim();
+ 
++  if (
++    /^INSTREAM size limit exceeded ERROR$/i.test(trimmed) ||
++    /^stream:\s*Heuristics\.Limits\.Exceeded\.(MaxFileSize|MaxScanSize)\s+FOUND$/i.test(trimmed)
++  ) {
++    return { status: "too-large" };
++  }
++
+   if (/^stream:\s*OK$/i.test(trimmed)) {
+     return { status: "clean" };
+   }
+diff --git a/src/scanner/docker-config.test.ts b/src/scanner/docker-config.test.ts
+new file mode 100644
+index 0000000..e93278e
+--- /dev/null
++++ b/src/scanner/docker-config.test.ts
+@@ -0,0 +1,39 @@
++import { execFileSync } from "node:child_process";
++import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
++import { tmpdir } from "node:os";
++import { join } from "node:path";
++import { expect, it } from "vitest";
++import { SCAN_SIZE_CAP_BYTES } from "../domain/limits.js";
++
++it("replaces Debian size limits instead of leaving an earlier limit active", () => {
++  const directory = mkdtempSync(join(tmpdir(), "cleanroom-clamd-"));
++  try {
++    const clamd = join(directory, "clamd.conf");
++    const freshclam = join(directory, "freshclam.conf");
++    writeFileSync(
++      clamd,
++      "LocalSocket /var/run/clamav/clamd.ctl\nStreamMaxLength 25M\nMaxFileSize 25M\nMaxScanSize 100M\nAlertExceedsMax no\n",
++    );
++    writeFileSync(freshclam, "Example\n");
++    const dockerfile = readFileSync(new URL("../../Dockerfile", import.meta.url), "utf8");
++    const command = dockerfile.match(/RUN sed -i [\s\S]*?(?=\n\n)/)?.[0];
++    if (!command) throw new Error("missing ClamAV configuration build step");
++    execFileSync("sh", [
++      "-c",
++      command
++        .slice(4)
++        .replaceAll("sed -i", "sed -i.bak")
++        .replaceAll("/etc/clamav/clamd.conf", clamd)
++        .replaceAll("/etc/clamav/freshclam.conf", freshclam),
++    ]);
++    const configuration = readFileSync(clamd, "utf8");
++    for (const setting of ["StreamMaxLength", "MaxFileSize", "MaxScanSize"]) {
++      expect(configuration.match(new RegExp(`^${setting} .*$`, "gm"))).toEqual([
++        `${setting} ${SCAN_SIZE_CAP_BYTES / (1024 * 1024)}M`,
++      ]);
++    }
++    expect(configuration.match(/^AlertExceedsMax .*$/gm)).toEqual(["AlertExceedsMax yes"]);
++  } finally {
++    rmSync(directory, { recursive: true, force: true });
++  }
++});
+diff --git a/src/scanner/scan-file.ts b/src/scanner/scan-file.ts
+index 9f40cc5..8614bc3 100644
+--- a/src/scanner/scan-file.ts
++++ b/src/scanner/scan-file.ts
+@@ -51,6 +51,8 @@ export function createClamdScanner({ host, port, fetchImpl = fetch }: ClamdScann
+     });
+ 
+     switch (verdict.status) {
++      case "too-large":
++        return { status: "too-large" };
+       case "clean":
+         return { status: "clean" };
+       case "infected":
