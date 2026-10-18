@@ -4,6 +4,7 @@
  */
 
 import Link from "next/link";
+import { ColorModePicker } from "@/components/color-mode-picker";
 import type { ReactNode } from "react";
 
 /**
@@ -53,7 +54,7 @@ export function SiteNav({
   accountHref,
 }: Omit<SiteChromeProps, "docs">) {
   return (
-    <nav className="flex items-center gap-5 border-b border-border py-6">
+    <nav className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border py-4">
       <Link
         href="/"
         className="inline-flex items-center gap-2 text-sm font-semibold tracking-tight text-foreground"
@@ -62,7 +63,7 @@ export function SiteNav({
         {wordmark}
       </Link>
 
-      <div className="ml-auto flex items-center gap-4 text-[13px] sm:gap-5">
+      <div className="order-last flex w-full flex-wrap items-center gap-4 text-[13px] sm:order-none sm:ml-auto sm:w-auto sm:gap-5">
         <a
           href={sibling.href}
           className="hidden rounded-full border border-border bg-card px-3 py-1 text-muted-foreground transition-colors hover:border-primary hover:text-foreground sm:inline-flex sm:items-center sm:gap-1.5"
@@ -96,6 +97,7 @@ export function SiteNav({
           </a>
         ) : null}
       </div>
+      <ColorModePicker className="ml-auto sm:ml-0" />
     </nav>
   );
 }
@@ -106,32 +108,39 @@ export function SiteFooter({
   docs,
 }: Omit<SiteChromeProps, "wordmark" | "accountHref">) {
   return (
-    <footer className="mt-24 flex flex-wrap items-baseline gap-x-7 gap-y-3 border-t border-border pt-9 pb-14 text-[13px] text-muted-foreground">
+    <footer className="mt-24 flex flex-wrap items-center gap-x-7 gap-y-4 border-t border-border pt-7 pb-12 text-[13px] text-muted-foreground">
       <span>
         Built by{" "}
         <a
           href={AUTHOR.href}
           target="_blank"
           rel="noreferrer"
-          className="text-foreground/80 transition-colors hover:text-primary"
+          className="inline-flex min-h-11 items-center text-foreground/80 transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
         >
           {AUTHOR.name}
         </a>
       </span>
-      <span className="ml-auto flex flex-wrap gap-x-4 gap-y-2">
+      <span className="flex w-full flex-wrap gap-x-5 gap-y-2 sm:ml-auto sm:w-auto">
         <a
           href={repoHref}
           target="_blank"
           rel="noreferrer"
-          className="transition-colors hover:text-primary"
+          className="inline-flex min-h-11 items-center transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
         >
           GitHub
         </a>
-        <a href={sibling.href} className="transition-colors hover:text-primary">
+        <a
+          href={sibling.href}
+          className="inline-flex min-h-11 items-center transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+        >
           {sibling.name}
         </a>
         {docs.map((doc) => (
-          <a key={doc.href} href={doc.href} className="transition-colors hover:text-primary">
+          <a
+            key={doc.href}
+            href={doc.href}
+            className="inline-flex min-h-11 items-center transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+          >
             {doc.label}
           </a>
         ))}

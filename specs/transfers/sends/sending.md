@@ -12,7 +12,7 @@ The inverse of a request: the agent puts files on a page and gets a link to that
 
 ### B1 — Agent starts a send 🟢 implemented
 
-An agent calls the **sharemeatsack.com** tool, or sends the same JSON over HTTP, with action `send`. It sends a title, optional message, optional expiry, optional opaque metadata, and the files it intends to put on the send — each as a name, type, and size, not as bytes. When the send is usable, it receives one short-lived upload URL per file, the sharemeatsack.com download link to give the person, a status link, and a private manage link. The tool and HTTP produce the same send.
+An agent calls the **share.imeatsack.com** tool, or sends the same JSON over HTTP, with action `send`. It sends a title, optional message, optional expiry, optional opaque metadata, and the files it intends to put on the send — each as a name, type, and size, not as bytes. When the send is usable, it receives one short-lived upload URL per file, the share.imeatsack.com download link to give the person, a status link, and a private manage link. The tool and HTTP produce the same send.
 
 If the payload is not usable — empty, over a limit, or missing names — create is refused and no download link is returned.
 
@@ -114,4 +114,4 @@ Create returns a private manage link. Opening it shows title, status, expiry, th
 - Emailing the download link.
 - Asking the person who opens it to sign in.
 - A “download all” archive built on this service’s compute.
-- Publishing HTML or a site — that is showmeatsack.com.
+- Publishing HTML or a site — that is show.imeatsack.com.

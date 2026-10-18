@@ -21,6 +21,7 @@ export const sharemeatsackToolActions = [
   "wait",
   "cancel",
   "files",
+  "merge",
 ] as const;
 
 export type SharemeatsackToolAction = (typeof sharemeatsackToolActions)[number];
@@ -38,6 +39,8 @@ export const sharemeatsackToolInputShape = {
   metadata: z.record(z.string(), z.string()).optional(),
   callbackUrl: z.string().url().optional(),
   agentToken: z.string().min(1).optional(),
+  secondaryTransferId: z.string().min(1).optional(),
+  secondaryAgentToken: z.string().min(1).optional(),
   files: z
     .array(
       z.object({
@@ -57,7 +60,7 @@ function invalidAction(message: string): TransferServiceError {
   };
 }
 
-export function createSharemeatsackTool(transfers: TransferService) {
+export function createSharemeatsackTool(transfers: TransferService, ownerAccountId?: string) {
   return {
     name: SHAREMEATSACK_TOOL_NAME,
     async invoke(input: {
@@ -73,32 +76,40 @@ export function createSharemeatsackTool(transfers: TransferService) {
       metadata?: Record<string, string>;
       callbackUrl?: string;
       agentToken?: string;
+      secondaryTransferId?: string;
+      secondaryAgentToken?: string;
       files?: { name: string; type?: string; size: number }[];
     }): Promise<unknown> {
       if (input.action === "request") {
-        return await transfers.create({
-          action: "request",
-          title: input.title,
-          message: input.message,
-          expiresInSeconds: input.expiresInSeconds,
-          maxFiles: input.maxFiles,
-          maxFileSize: input.maxFileSize,
-          allowedTypes: input.allowedTypes,
-          metadata: input.metadata,
-          callbackUrl: input.callbackUrl,
-        });
+        return await transfers.create(
+          {
+            action: "request",
+            title: input.title,
+            message: input.message,
+            expiresInSeconds: input.expiresInSeconds,
+            maxFiles: input.maxFiles,
+            maxFileSize: input.maxFileSize,
+            allowedTypes: input.allowedTypes,
+            metadata: input.metadata,
+            callbackUrl: input.callbackUrl,
+          },
+          ownerAccountId,
+        );
       }
 
       if (input.action === "send") {
-        return await transfers.create({
-          action: "send",
-          title: input.title,
-          message: input.message,
-          expiresInSeconds: input.expiresInSeconds,
-          metadata: input.metadata,
-          callbackUrl: input.callbackUrl,
-          files: input.files,
-        });
+        return await transfers.create(
+          {
+            action: "send",
+            title: input.title,
+            message: input.message,
+            expiresInSeconds: input.expiresInSeconds,
+            metadata: input.metadata,
+            callbackUrl: input.callbackUrl,
+            files: input.files,
+          },
+          ownerAccountId,
+        );
       }
 
       if (!input.transferId) {
@@ -124,6 +135,17 @@ export function createSharemeatsackTool(transfers: TransferService) {
         return await transfers.listFiles({
           transferId: input.transferId,
           agentToken: input.agentToken,
+        });
+      }
+
+      if (input.action === "merge") {
+        return await transfers.merge({
+          transferId: input.transferId,
+          agentToken: input.agentToken,
+          body: {
+            secondaryTransferId: input.secondaryTransferId,
+            secondaryAgentToken: input.secondaryAgentToken,
+          },
         });
       }
 

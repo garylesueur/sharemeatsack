@@ -1,20 +1,24 @@
 # 1Password secret references. Nothing secret lives in git.
 # One vault: Agents (mep374l3cpdtzwibf5fswsimbi). Override with OP_VAULT.
 # Three items:
-#   sharemeatsack.com Development  — this file; laptop only
-#   sharemeatsack.com Preview      — .env.preview.tpl → Vercel Preview
-#   sharemeatsack.com Production   — .env.production.tpl → Vercel Production
+#   y4tyhoe2snpl2eki4baltvlmwi  — this file; laptop only
+#   otnqsmx6g7jpkrq2ttqlj7m4fu      — .env.preview.tpl → Vercel Preview
+#   wsx7fzegvrckenlgc4ov7zt25m   — .env.production.tpl → Vercel Production
 # Leave Redis empty on the Development item to stay local. Fill R2 to upload files.
 
-AGENT_API_KEY=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/sharemeatsack.com Development/AGENT_API_KEY
+AGENT_API_KEY=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/y4tyhoe2snpl2eki4baltvlmwi/AGENT_API_KEY
 PUBLIC_BASE_URL=http://localhost:3000
-KV_REST_API_URL=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/sharemeatsack.com Development/KV_REST_API_URL
-KV_REST_API_TOKEN=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/sharemeatsack.com Development/KV_REST_API_TOKEN
-R2_ACCOUNT_ID=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/sharemeatsack.com Development/R2_ACCOUNT_ID
-R2_ACCESS_KEY_ID=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/sharemeatsack.com Development/R2_ACCESS_KEY_ID
-R2_SECRET_ACCESS_KEY=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/sharemeatsack.com Development/R2_SECRET_ACCESS_KEY
-R2_BUCKET_NAME=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/sharemeatsack.com Development/R2_BUCKET_NAME
-R2_PUBLIC_BASE_URL=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/sharemeatsack.com Development/R2_PUBLIC_BASE_URL
-CLEANROOM_URL=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/sharemeatsack.com Development/CLEANROOM_URL
-CLEANROOM_SERVICE_CREDENTIAL=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/sharemeatsack.com Development/CLEANROOM_SERVICE_CREDENTIAL
-CLEANROOM_WEBHOOK_SECRET=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/sharemeatsack.com Development/CLEANROOM_WEBHOOK_SECRET
+LANYARD_URL=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/MEATSACK lanyard Development/BETTER_AUTH_URL
+KV_REST_API_URL=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/y4tyhoe2snpl2eki4baltvlmwi/KV_REST_API_URL
+KV_REST_API_TOKEN=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/y4tyhoe2snpl2eki4baltvlmwi/KV_REST_API_TOKEN
+R2_ACCOUNT_ID=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/y4tyhoe2snpl2eki4baltvlmwi/R2_ACCOUNT_ID
+R2_ACCESS_KEY_ID=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/y4tyhoe2snpl2eki4baltvlmwi/R2_ACCESS_KEY_ID
+R2_SECRET_ACCESS_KEY=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/y4tyhoe2snpl2eki4baltvlmwi/R2_SECRET_ACCESS_KEY
+R2_BUCKET_NAME=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/y4tyhoe2snpl2eki4baltvlmwi/R2_BUCKET_NAME
+R2_PUBLIC_BASE_URL=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/y4tyhoe2snpl2eki4baltvlmwi/R2_PUBLIC_BASE_URL
+CLEANROOM_URL=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/y4tyhoe2snpl2eki4baltvlmwi/CLEANROOM_URL
+CLEANROOM_SERVICE_CREDENTIAL=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/y4tyhoe2snpl2eki4baltvlmwi/CLEANROOM_SERVICE_CREDENTIAL
+CLEANROOM_WEBHOOK_SECRET=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/y4tyhoe2snpl2eki4baltvlmwi/CLEANROOM_WEBHOOK_SECRET
+
+# Optional HTTPS scan-result return origin for local acceptance; normally unset.
+CLEANROOM_CALLBACK_BASE_URL=

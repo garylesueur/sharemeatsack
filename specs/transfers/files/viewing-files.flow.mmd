@@ -1,0 +1,89 @@
+%% Generated from viewing-files.flow.yaml. Do not edit directly.
+stateDiagram-v2
+    [*] --> F1_access
+
+    F1_access: Check the current link and permitted file list
+    F1_waiting: Transfer or scans are not ready
+    F1_receipt: Public request upload or receipt
+    F1_empty: No listed files
+    F1_unavailable: Link unavailable
+    F1_single: Open the sole listed file
+    F1_collection: Open the collection
+    F1_left: Leave the surface
+
+    F1_access --> F1_receipt: Link checked
+    F1_access --> F1_waiting: Link checked
+    F1_access --> F1_empty: Link checked
+    F1_access --> F1_single: Link checked
+    F1_access --> F1_collection: Link checked
+    F1_access --> F1_unavailable: Link checked
+    F1_waiting --> F1_access: Status refreshes
+    F1_waiting --> F1_left: Leave
+
+    F1_receipt --> [*]
+    F1_empty --> [*]
+    F1_unavailable --> [*]
+    F1_single --> [*]
+    F1_collection --> [*]
+    F1_left --> [*]
+    [*] --> F2_entry
+
+    F2_entry: Restore valid viewing state
+    F2_collection: Browse List or Grid and filtered results
+    F2_selected: Select the authorised listed item and its viewer
+    F2_loading: Load a bounded preview directly from storage
+    F2_viewer: View play or read the selected file
+    F2_fallback: File details with permitted original download
+    F2_renewing: Obtain fresh permitted access once
+    F2_unavailable: Access unavailable
+    F2_left: Leave the surface
+    F2_empty: No listed files remain
+
+    F2_entry --> F2_selected: Viewing state restored
+    F2_entry --> F2_collection: Viewing state restored
+    F2_collection --> F2_collection: Change view sort search or filter
+    F2_collection --> F2_selected: Open a listed item
+    F2_selected --> F2_loading: Viewer chosen
+    F2_selected --> F2_fallback: Viewer chosen
+    F2_loading --> F2_viewer: Preview ready
+    F2_loading --> F2_renewing: Loading fails
+    F2_loading --> F2_fallback: Loading fails
+    F2_viewer --> F2_renewing: Read access expires
+    F2_viewer --> F2_fallback: Read access expires
+    F2_renewing --> F2_loading: Renewal resolves
+    F2_renewing --> F2_unavailable: Renewal resolves
+    F2_renewing --> F2_fallback: Renewal resolves
+    F2_fallback --> F2_selected: Retry
+    F2_viewer --> F2_viewer: Use preview controls
+    F2_viewer --> F2_fallback: Preview fails
+    F2_viewer --> F2_selected: Open an authorised same-transfer attachment
+    F2_viewer --> F2_viewer: Download original
+    F2_fallback --> F2_fallback: Download original
+    F2_loading --> F2_selected: Previous next or history selects another file
+    F2_viewer --> F2_selected: Previous next or history selects another file
+    F2_fallback --> F2_selected: Previous next or history selects another file
+    F2_renewing --> F2_selected: Previous next or history selects another file
+    F2_loading --> F2_collection: Close viewer or Back to collection
+    F2_viewer --> F2_collection: Close viewer or Back to collection
+    F2_fallback --> F2_collection: Close viewer or Back to collection
+    F2_renewing --> F2_collection: Close viewer or Back to collection
+    F2_collection --> F2_unavailable: Lose viewing access
+    F2_loading --> F2_unavailable: Lose viewing access
+    F2_viewer --> F2_unavailable: Lose viewing access
+    F2_fallback --> F2_unavailable: Lose viewing access
+    F2_renewing --> F2_unavailable: Lose viewing access
+    F2_collection --> F2_left: Leave
+    F2_loading --> F2_left: Leave
+    F2_viewer --> F2_left: Leave
+    F2_fallback --> F2_left: Leave
+    F2_renewing --> F2_left: Leave
+    F2_collection --> F2_entry: Listed files change
+    F2_loading --> F2_entry: Listed files change
+    F2_viewer --> F2_entry: Listed files change
+    F2_fallback --> F2_entry: Listed files change
+    F2_renewing --> F2_entry: Listed files change
+    F2_entry --> F2_empty: Viewing state restored
+
+    F2_unavailable --> [*]
+    F2_left --> [*]
+    F2_empty --> [*]

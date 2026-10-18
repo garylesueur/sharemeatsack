@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { ColorSchemeSync } from "@/components/color-scheme-sync";
 import { COLOR_MODE_BOOT_SCRIPT } from "@/lib/color-mode";
-import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/mcp-docs";
+import { SITE_DESCRIPTION, SITE_TITLE, siteJsonLd } from "@/lib/mcp-docs";
 import { PRODUCT_NAME, PRODUCT_SENTENCE } from "@/lib/product";
 import { publicOrigin } from "@/lib/public-origin";
 import "./globals.css";
@@ -23,20 +23,24 @@ const origin = publicOrigin();
 export const metadata: Metadata = {
   metadataBase: new URL(origin),
   title: {
-    default: SITE_TITLE,
-    template: `%s · ${SITE_TITLE}`,
+    default: `${SITE_TITLE} · I, Meatsack`,
+    template: `%s · ${SITE_TITLE} · I, Meatsack`,
   },
   description: `${PRODUCT_SENTENCE} ${SITE_DESCRIPTION}`,
   applicationName: PRODUCT_NAME,
-  icons: {
-    icon: "/logo.svg",
-  },
-  keywords: ["sharemeatsack.com", "MCP", "file transfer", "agent", "human in the loop"],
-  authors: [{ name: PRODUCT_NAME, url: origin }],
+  keywords: [
+    "I, Meatsack",
+    "share.imeatsack.com",
+    "MCP",
+    "file transfer",
+    "agent",
+    "human in the loop",
+  ],
+  authors: [{ name: "Gary Le Sueur", url: "https://gaz.dev" }],
   alternates: {
     canonical: "/",
     types: {
-      "text/markdown": "/mcp.md",
+      "text/markdown": "/index.md",
       "text/plain": "/llms.txt",
     },
   },
@@ -44,14 +48,19 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_GB",
     url: origin,
-    siteName: PRODUCT_NAME,
-    title: PRODUCT_NAME,
+    siteName: "I, Meatsack",
+    title: `${PRODUCT_NAME} · I, Meatsack`,
     description: `${PRODUCT_SENTENCE} ${SITE_DESCRIPTION}`,
   },
   twitter: {
     card: "summary_large_image",
-    title: PRODUCT_NAME,
+    title: `${PRODUCT_NAME} · I, Meatsack`,
     description: `${PRODUCT_SENTENCE} ${SITE_DESCRIPTION}`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
   },
 };
 
@@ -60,6 +69,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const jsonLd = siteJsonLd(origin);
   return (
     <html
       lang="en-GB"
@@ -68,6 +78,10 @@ export default function RootLayout({
     >
       <body className="flex min-h-full flex-col bg-background font-sans text-foreground">
         <script dangerouslySetInnerHTML={{ __html: COLOR_MODE_BOOT_SCRIPT }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <ColorSchemeSync />
         {children}
         <Analytics />

@@ -16,6 +16,7 @@
     ".next/**",
     "out/**",
     "build/**",
+    "public/_preview/**",
     "next-env.d.ts",
     ".agents/**",
     ".plans/**",

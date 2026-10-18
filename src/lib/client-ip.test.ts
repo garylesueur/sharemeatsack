@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { SHARED_BUCKET, clientIpFromRequest } from "./client-ip";
 
 function requestWith(headers: Record<string, string>): Request {
-  return new Request("https://sharemeatsack.com/api/v1/transfers", { headers });
+  return new Request("https://share.imeatsack.com/api/v1/transfers", { headers });
 }
 
 describe("create rate-limit address", () => {

@@ -1,9 +1,9 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
   "mcpServers": {
-    "sharemeatsack.com": {
+    "share.imeatsack.com": {
       "type": "streamable-http",
-      "url": "https://sharemeatsack.com/mcp"
+      "url": "https://share.imeatsack.com/mcp"
     }
   }
 }

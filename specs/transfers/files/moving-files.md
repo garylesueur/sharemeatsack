@@ -56,23 +56,69 @@ A download URL the agent is given expires in minutes, not days. Action `files` (
 
 ### B12 — The transfer expires, then the files go 🔵 future
 
-If the agent does not set an expiry, the transfer lasts **7 days** from create. The agent may choose a sooner expiry, never later than **30 days**. After expiry, links stop working. The stored files are destroyed shortly after. A new transfer is a new link.
+If the agent does not set an expiry, the transfer lasts **7 days** from create. The agent may choose a sooner expiry, never later than **30 days**. After expiry, public upload and download links stop working. The stored files are destroyed shortly after. While accepted objects remain retained, private agent access follows the existing request/agent rules; expiry does not silently remove those listed files. A new transfer is a new link.
 
 ### B13 — Progress is visible while a file is going in 🟢 implemented
 
 The person uploading sees each name, size, and whether it is in flight, retrying, or done. They can remove a file that has not been sealed yet. The agent’s status during an open request does not include download URLs.
 
+### B14 — Existing shares can be merged with both private keys 🟡 partial
+
+> Existing legacy merges are implemented; same-account durable merge safeguards require verification with the account workspace changes.
+
+The agent chooses a primary share to keep and a secondary share to empty. Both private agent tokens are required; a human link grants no merge permission. Both shares must be unexpired, sealed requests or ready sends, with uploads and scans finished. A share cannot merge into itself.
+
+An owned merge requires both shares to belong to the same account. Both private
+keys remain required. Two durably retained owned shares use their retained file
+and allowance rules. Two legacy shares already owned by the same account continue
+under the existing legacy rules; merging does not migrate them or grant the new
+durable retention guarantees. Two existing anonymous legacy shares also continue
+to merge under the rules above. Different owners, an owned share paired with an
+anonymous share, or a durably retained share paired with a legacy share are refused
+as a conflict without changing either share or either account's storage allowance.
+
+All file records move together into the primary without transporting file bytes. File ids, filenames, sizes, types, and scan verdicts are preserved. Matching filenames remain distinct files. Blocked files stay blocked. Overlapping file ids are refused. Files become accessible using the primary's existing capabilities, and disappear from the secondary's file list and new file access requests. Already issued storage URLs remain usable until their own expiry.
+
+For a durable owned merge, retained file references and their allowance follow the files
+into the primary together, without a second charge or a partial move. Each file's
+original source, received time, scan warning and retention deadline remain intact.
+Moving a received upload into another send or request does not reset its 90-day
+retention or turn it into the account holder's own indefinite upload. An independent
+copy already kept in My files remains independent of either share.
+
+The primary keeps its kind, public and private links, title, settings, and expiry. Its count, size, total-byte, and type limits apply to the combined files. A request does not become a public download page. A refused merge changes neither share. Concurrent changes cannot lose or duplicate files or bypass limits: the agent refreshes status and retries when a merge conflicts.
+
+The secondary remains sealed and empty, with its existing expiry. Repeating a successful merge moves zero files. It is not deleted immediately and emptiness does not shorten its lifetime. Production transfer records age out under the existing retention rules; automatic file destruction remains future work under B12.
+
 ## Rules (Invariants)
 
 - This service never holds file bytes on its compute, including for “download all”.
 - Every limit is enforced here. A modified client cannot bypass any of them.
-- A download URL that has expired cannot be reused. A fresh one can be minted for the same accepted file while the transfer is live.
+- A download URL that has expired cannot be reused. A fresh one can be minted for the same accepted file while that viewer's capability permits access. Public access requires a live transfer; retained private access follows the requesting/agent contract.
 - Infected and failed-scan files never receive a download URL.
 - A skipped-too-large file is never described as clean.
 - Destroying a transfer destroys its files. Another transfer’s files are not touched.
+- After a merge, moved files belong to the primary. Expiry or removal of the secondary must not destroy them, even if their storage paths contain the secondary's id.
+- An owned merge never transfers files between accounts or joins durable and legacy
+  storage lifecycles. Refusal changes neither transfer, its file references nor any
+  storage allowance.
 - Scan links given to the scanner live long enough for its retries. A one-hour link is not enough.
 
 ## Decision Tables
+
+### Whether two shares can enter a merge
+
+The existing private-key, live-state and file-limit checks apply to every permitted
+row below.
+
+| Shares | Outcome |
+| --- | --- |
+| Both durably retained and owned by the same account | Permitted under the existing merge checks; preserve references, allowance and provenance |
+| Shares owned by different accounts | Conflict; neither share nor storage allowance changes |
+| One durably retained share and one legacy share | Conflict; neither share nor storage allowance changes |
+| Two legacy shares owned by the same account | Existing legacy merge rules continue; no migration or new durable retention guarantee |
+| One owned share and one anonymous share | Conflict; neither share nor storage allowance changes |
+| Two anonymous legacy shares | Existing anonymous merge rules continue |
 
 ### Whether an offered file is accepted
 
@@ -85,7 +131,7 @@ The person uploading sees each name, size, and whether it is in flight, retrying
 | Yes | Yes | **No** | Any | Yes | Refused — transfer too large |
 | Any | Any | Any | Any | **No** | Refused — closed |
 
-### Whether a stored file can be downloaded
+### Whether a stored file can be downloaded through a public send link
 
 | Scan | Transfer live | Outcome |
 | --- | --- | --- |
@@ -95,6 +141,8 @@ The person uploading sees each name, size, and whether it is in flight, retrying
 | Failed | Yes | No URL |
 | Still scanning | Yes | No URL |
 | Any | **No** | No URL |
+
+Private agent access to retained accepted files follows Requesting files' terminal-state table, including the same scan restrictions after expiry or cancellation. This does not extend object retention.
 
 ## User Flows
 
@@ -108,6 +156,12 @@ _None._ Request and send own the journeys. This spec is the shared rules those j
 - **Settled:** Default life is 7 days, never more than 30. Large objects should not sit forever.
 - **Settled:** Over 500 MiB is offered and flagged, not held. Infection is the only scan verdict that hides a file.
 - **Settled:** Failed scans stay blocked. They are not treated as skipped.
+- **Settled:** Owned merges are limited to the same account. Two durable owned
+  shares use the retained-file rules; two same-account legacy-owned shares and
+  existing anonymous legacy merges continue under their existing legacy rules,
+  without migration or new durable retention guarantees. Cross-account,
+  owned/anonymous and mixed durable/legacy merges are refused without changing
+  records or allowance.
 
 ## Future Considerations
 

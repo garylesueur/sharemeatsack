@@ -1,8 +1,8 @@
-# sharemeatsack.com — repository instructions
+# share.imeatsack.com — repository instructions
 
-**Domain:** sharemeatsack.com
+**Domain:** share.imeatsack.com
 
-Greenfield project. An agent shares files with a person, or gets files from a person. Next.js App Router, TypeScript, Tailwind, pnpm — same shape as askmeatsack.com and showmeatsack.com. Merge gates live in `.engineering/config.yaml`.
+Greenfield project. An agent shares files with a person, or gets files from a person. Next.js App Router, TypeScript, Tailwind, pnpm — same shape as ask.imeatsack.com and show.imeatsack.com. Merge gates live in `.engineering/config.yaml`.
 
 ## Commands
 
@@ -18,13 +18,13 @@ pnpm test        # Vitest
 pnpm build       # Production build
 ```
 
-1Password holds three items in the **Agents** vault (`mep374l3cpdtzwibf5fswsimbi`, override with `OP_VAULT`): `sharemeatsack.com Development`, `sharemeatsack.com Preview`, and `sharemeatsack.com Production`. Same field names, different values. Local commands use the Development item only. Leave Development Redis empty to stay local. File uploads will need R2. `.env.development.tpl`, `.env.preview.tpl`, and `.env.production.tpl` hold `op://` references only. `.env.example` is the empty placeholder. Never print `.env` contents, never commit secrets.
+1Password holds three items in the **Agents** vault (`mep374l3cpdtzwibf5fswsimbi`, override with `OP_VAULT`): `y4tyhoe2snpl2eki4baltvlmwi`, `otnqsmx6g7jpkrq2ttqlj7m4fu`, and `wsx7fzegvrckenlgc4ov7zt25m`. Same field names, different values. Local commands use the Development item only. Leave Development Redis empty to stay local. File uploads will need R2. `.env.development.tpl`, `.env.preview.tpl`, and `.env.production.tpl` hold `op://` references only. `.env.example` is the empty placeholder. Never print `.env` contents, never commit secrets.
 
 ## What this is
 
 An agent creates a request or a send, gets a link, and waits. The person opens the link and uploads or downloads. They never sign in. Posting that link to Slack, email, or anywhere else is the calling agent’s job. This service does not send mail.
 
-Always call the product **sharemeatsack.com** in user-facing copy. The agent tool is named `sharemeatsack.com`. Human links will be `https://sharemeatsack.com/s/…`. Transfers themselves land from plan chunk A1.
+Always call the product **share.imeatsack.com** in user-facing copy. The agent tool is named `share.imeatsack.com`. Human links will be `https://share.imeatsack.com/s/…`. Transfers themselves land from plan chunk A1.
 
 ## Where things live
 
@@ -32,7 +32,7 @@ Always call the product **sharemeatsack.com** in user-facing copy. The agent too
 - Specs live in `specs/`. Format: `specs/README.md`. Start with `specs/transfers/requests/requesting.md`.
 - The implementation plan is `.plans/v1.md`.
 - Conventions live in `.engineering/conventions.yaml`.
-- calm-craft is vendored as a submodule at `.agents/plugins/calm-craft`.
+- Calm Craft portable skills, references and assets come from the installed `calm-craft` tooling plugin. Invoke its `calm-craft:…` skills. Keep repository skills project-specific; repository settings live in `.engineering/config.yaml`.
 - Shared brand files live in the `brand/` submodule ([meatsack-brand](https://github.com/garylesueur/meatsack-brand)).
 - The repository root is an [Agent Plugin](https://agent-plugins.org/): `plugin.json`, `mcp.json`, and `skills/`. The skill text lands in A6.
 - Implementation plans and review reports go in `.plans/` and `.reports/` (gitignored).

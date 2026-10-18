@@ -1,0 +1,52 @@
+%% Generated from workspace-claim.flow.yaml. Do not edit directly.
+flowchart TD
+  subgraph F5["F5: Claim surviving anonymous Share work"]
+    F5_paste["Enter private manage proof"]
+    F5_check{{"Check proof and current account"}}
+    F5_sign-in["Sign in to claim"]
+    F5_review["Review claim for this account"]
+    F5_claim{{"Retain this item and claim ownership"}}
+    F5_reconcile{{"Check the claim outcome"}}
+    F5_failure["Claim could not complete"]
+    F5_capacity["Allowance is full"]
+    F5_busy["The item is changing"]
+    F5_unavailable(["Item unavailable"])
+    F5_complete(["Open the claimed item"])
+    F5_cancelled(["Leave without a claim"])
+    F5_paste -->|"F5.T1: Review [A supported private manage proof is supplied.]"| F5_check
+    F5_paste -->|"F5.T2: Review [The input is missing, malformed or is only a public link.]"| F5_failure
+    F5_paste -->|"F5.T3: Cancel"| F5_cancelled
+    F5_check -->|"F5.T4: Check resolves [The portal session is missing or ended.]"| F5_sign-in
+    F5_check -->|"F5.T5: Check resolves [A live account and valid private proof confirm a surviving unowned eligible item.]"| F5_review
+    F5_check -->|"F5.T6: Check resolves [The same live account already completed this selected claim.]"| F5_complete
+    F5_check -->|"F5.T7: Check resolves [Proof is invalid, the source is missing/deleted/purged, or another account owns it.]"| F5_unavailable
+    F5_check -->|"F5.T8: Check resolves [Source uploads, replacement, deletion or an uncertain mutation prevent a stable eligible snapshot.]"| F5_busy
+    F5_check -->|"F5.T9: Check resolves [Any other eligibility or storage check fails.]"| F5_failure
+    F5_sign-in -->|"F5.T10: Sign-in completes [The bounded tab continuation remains available.]"| F5_check
+    F5_sign-in -->|"F5.T11: Sign-in completes [The continuation expired, was discarded or could not be stored.]"| F5_paste
+    F5_sign-in -->|"F5.T12: Cancel"| F5_cancelled
+    F5_review -->|"F5.T13: Claim [The reviewed live account is still the current account.]"| F5_claim
+    F5_review -->|"F5.T14: Claim [The account changed or the review is no longer current.]"| F5_check
+    F5_review -->|"F5.T15: Back"| F5_paste
+    F5_review -->|"F5.T16: Cancel"| F5_cancelled
+    F5_review -->|"F5.T17: Session ends"| F5_sign-in
+    F5_claim -->|"F5.T18: Operation resolves [Ownership committed with the complete eligible retained content.]"| F5_complete
+    F5_claim -->|"F5.T19: Operation resolves [Allowance admission refused before ownership commit.]"| F5_capacity
+    F5_claim -->|"F5.T20: Operation resolves [The source cannot be exclusively captured safely.]"| F5_busy
+    F5_claim -->|"F5.T21: Operation resolves [Definitive current proof/source eligibility is lost, or another account won.]"| F5_unavailable
+    F5_claim -->|"F5.T22: Operation resolves [A response was lost, the session changed/ended, or completion is uncertain.]"| F5_reconcile
+    F5_claim -->|"F5.T23: Operation resolves [The operation definitively failed without ownership commit.]"| F5_failure
+    F5_reconcile -->|"F5.T24: Outcome resolves [The selected account’s original attempt committed and remains eligible for its owner.]"| F5_complete
+    F5_reconcile -->|"F5.T25: Outcome resolves [The original attempt definitively aborted.]"| F5_failure
+    F5_reconcile -->|"F5.T26: Outcome resolves [The account session ended or changed before a usable owner result can be returned.]"| F5_sign-in
+    F5_reconcile -->|"F5.T27: Outcome resolves [Outcome cannot currently be confirmed.]"| F5_failure
+    F5_failure -->|"F5.T28: Retry or check again"| F5_check
+    F5_failure -->|"F5.T29: Back"| F5_paste
+    F5_failure -->|"F5.T30: Cancel"| F5_cancelled
+    F5_capacity -->|"F5.T31: Retry after freeing space"| F5_check
+    F5_capacity -->|"F5.T32: Back"| F5_paste
+    F5_capacity -->|"F5.T33: Cancel"| F5_cancelled
+    F5_busy -->|"F5.T34: Retry"| F5_check
+    F5_busy -->|"F5.T35: Back"| F5_paste
+    F5_busy -->|"F5.T36: Cancel"| F5_cancelled
+  end

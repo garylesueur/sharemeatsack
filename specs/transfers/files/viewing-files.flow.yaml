@@ -1,0 +1,377 @@
+version: 1
+flows:
+  - id: F1
+    name: Open a file surface
+    start: access
+    states:
+      - id: access
+        kind: action
+        label: Check the current link and permitted file list
+      - id: waiting
+        kind: screen
+        label: Transfer or scans are not ready
+      - id: receipt
+        kind: terminal
+        label: Public request upload or receipt
+        outcome: The existing upload journey continues without received-file read access.
+      - id: empty
+        kind: terminal
+        label: No listed files
+        outcome: The existing transfer status explains why no files are available.
+      - id: unavailable
+        kind: terminal
+        label: Link unavailable
+        outcome: Expired, cancelled or invalid public access exposes no read URLs or other transfer details.
+      - id: single
+        kind: terminal
+        label: Open the sole listed file
+        outcome: F2 begins at the selected file, including a blocked private file card when applicable.
+      - id: collection
+        kind: terminal
+        label: Open the collection
+        outcome: F2 begins at List or Grid according to the listed file families.
+      - id: left
+        kind: terminal
+        label: Leave the surface
+        outcome: No viewer is active.
+    transitions:
+      - id: F1.T1
+        from: access
+        event: Link checked
+        guard: The capability is a valid public request upload link.
+        to: receipt
+        covers: [B1, B8]
+      - id: F1.T2
+        from: access
+        event: Link checked
+        guard: The capability is valid for this file surface but its state does not yet permit any accepted-file listing.
+        to: waiting
+        covers: [B1, B8]
+      - id: F1.T3
+        from: access
+        event: Link checked
+        guard: The capability permits a listing and there are no listed files.
+        to: empty
+        covers: [B1, B3, B8]
+      - id: F1.T4
+        from: access
+        event: Link checked
+        guard: The capability permits a listing and there is exactly one listed file.
+        to: single
+        covers: [B1, B2, B6, B7, B8]
+      - id: F1.T5
+        from: access
+        event: Link checked
+        guard: The capability permits a listing and there are two or more listed files.
+        to: collection
+        covers: [B1, B3, B6, B8]
+      - id: F1.T6
+        from: access
+        event: Link checked
+        to: unavailable
+        outcome: The capability is invalid or public access has ended.
+        covers: [B1, B8]
+      - id: F1.T7
+        from: waiting
+        event: Status refreshes
+        to: access
+        covers: [B1, B8]
+      - id: F1.T8
+        from: waiting
+        event: Leave
+        to: left
+        covers: [B19]
+  - id: F2
+    name: Browse and view
+    start: entry
+    states:
+      - id: entry
+        kind: action
+        label: Restore valid viewing state
+      - id: collection
+        kind: screen
+        label: Browse List or Grid and filtered results
+      - id: selected
+        kind: action
+        label: Select the authorised listed item and its viewer
+      - id: loading
+        kind: screen
+        label: Load a bounded preview directly from storage
+      - id: viewer
+        kind: screen
+        label: View play or read the selected file
+      - id: fallback
+        kind: screen
+        label: File details with permitted original download
+      - id: renewing
+        kind: screen
+        label: Obtain fresh permitted access once
+      - id: unavailable
+        kind: terminal
+        label: Access unavailable
+        outcome: Further loading and playback stop; the user sees the permitted status explanation.
+      - id: left
+        kind: terminal
+        label: Leave the surface
+        outcome: Players, stale requests and document resources are released.
+      - id: empty
+        kind: terminal
+        label: No listed files remain
+        outcome: Show the current transfer status; no file viewer remains active.
+    transitions:
+      - id: F2.T1
+        from: entry
+        event: Viewing state restored
+        guard: There is one listed file or a valid restored selected item.
+        to: selected
+        covers: [B2, B5]
+      - id: F2.T2
+        from: entry
+        event: Viewing state restored
+        guard: There are multiple listed files and no valid restored selected item.
+        to: collection
+        outcome: Multiple files open in their default or restored view; invalid selection is explained without revealing that file.
+        covers: [B3, B5]
+      - id: F2.T3
+        from: collection
+        event: Change view sort search or filter
+        to: collection
+        outcome: Context and selection remain consistent, including an empty-result reset action.
+        covers: [B3, B4, B5, B19]
+      - id: F2.T4
+        from: collection
+        event: Open a listed item
+        to: selected
+        covers: [B5, B19]
+      - id: F2.T5
+        from: selected
+        event: Viewer chosen
+        guard: The file is takeable and has a supported preview within known limits.
+        to: loading
+        covers: [B7, B8, B9, B18]
+      - id: F2.T6
+        from: selected
+        event: Viewer chosen
+        to: fallback
+        outcome: A blocked, unsupported or known over-budget file has truthful details and only the actions permitted by its capability.
+        covers: [B6, B7, B8, B18]
+      - id: F2.T7
+        from: loading
+        event: Preview ready
+        to: viewer
+        covers: [B9, B10, B11, B12, B13, B14, B15, B16, B17, B18, B19]
+      - id: F2.T8
+        from: loading
+        event: Loading fails
+        guard: The failure is expired read access and the current load has not renewed yet.
+        to: renewing
+        covers: [B8, B9]
+      - id: F2.T9
+        from: loading
+        event: Loading fails
+        to: fallback
+        outcome: A network, timeout, decode, parse or budget failure explains the fallback and any useful Retry.
+        covers: [B7, B9, B18]
+      - id: F2.T10
+        from: viewer
+        event: Read access expires
+        guard: The current load has not renewed yet.
+        to: renewing
+        covers: [B8, B9]
+      - id: F2.T11
+        from: viewer
+        event: Read access expires
+        to: fallback
+        outcome: Continued failure requires explicit Retry rather than an automatic renewal loop.
+        covers: [B9]
+      - id: F2.T12
+        from: renewing
+        event: Renewal resolves
+        guard: The capability still permits this file and storage returns fresh access.
+        to: loading
+        outcome: Selection and available reading, page, zoom or playback position are preserved.
+        covers: [B8, B9]
+      - id: F2.T13
+        from: renewing
+        event: Renewal resolves
+        guard: The file capability has ended or the file is no longer takeable.
+        to: unavailable
+        covers: [B8, B9]
+      - id: F2.T14
+        from: renewing
+        event: Renewal resolves
+        to: fallback
+        outcome: Network or storage failure retains a truthful retry/download fallback where still allowed.
+        covers: [B7, B9]
+      - id: F2.T15
+        from: fallback
+        event: Retry
+        guard: The file is takeable and the error is recoverable.
+        to: selected
+        outcome: A new user-initiated load may renew once.
+        covers: [B7, B9]
+      - id: F2.T16
+        from: viewer
+        event: Use preview controls
+        to: viewer
+        outcome: The selected renderer follows its image, playback, source, page or table rules; native control keys remain native.
+        covers: [B10, B11, B12, B13, B14, B15, B16, B17, B19]
+      - id: F2.T17
+        from: viewer
+        event: Preview fails
+        to: fallback
+        covers: [B7, B9, B18]
+      - id: F2.T18
+        from: viewer
+        event: Open an authorised same-transfer attachment
+        to: selected
+        outcome: The attachment becomes the selected item without widening access or losing collection context.
+        covers: [B5, B8, B14]
+      - id: F2.T19
+        from: viewer
+        event: Download original
+        guard: This file remains takeable.
+        to: viewer
+        outcome: The original downloads directly from storage; viewing remains available.
+        covers: [B6, B7, B8]
+      - id: F2.T20
+        from: fallback
+        event: Download original
+        guard: This file remains takeable.
+        to: fallback
+        covers: [B6, B7, B8]
+      - id: F2.T21
+        from: loading
+        event: Previous next or history selects another file
+        guard: A listed item exists at that position in the current navigation set.
+        to: selected
+        covers: [B5, B18]
+      - id: F2.T22
+        from: viewer
+        event: Previous next or history selects another file
+        guard: A listed item exists at that position in the current navigation set.
+        to: selected
+        outcome: Prior playback and resources stop before the new item opens.
+        covers: [B5, B11, B12, B13, B18, B19]
+      - id: F2.T23
+        from: fallback
+        event: Previous next or history selects another file
+        guard: A listed item exists at that position in the current navigation set.
+        to: selected
+        covers: [B5, B19]
+      - id: F2.T24
+        from: renewing
+        event: Previous next or history selects another file
+        guard: A listed item exists at that position in the current navigation set.
+        to: selected
+        outcome: Stale renewal cannot overwrite the new selection.
+        covers: [B5, B9, B18]
+      - id: F2.T25
+        from: loading
+        event: Close viewer or Back to collection
+        guard: This is a multiple-file surface.
+        to: collection
+        covers: [B5, B18, B19]
+      - id: F2.T26
+        from: viewer
+        event: Close viewer or Back to collection
+        guard: This is a multiple-file surface.
+        to: collection
+        outcome: Collection context and focus return; playback and resources stop.
+        covers: [B5, B11, B12, B13, B18, B19]
+      - id: F2.T27
+        from: fallback
+        event: Close viewer or Back to collection
+        guard: This is a multiple-file surface.
+        to: collection
+        covers: [B5, B19]
+      - id: F2.T28
+        from: renewing
+        event: Close viewer or Back to collection
+        guard: This is a multiple-file surface.
+        to: collection
+        covers: [B5, B9, B18, B19]
+      - id: F2.T29
+        from: collection
+        event: Lose viewing access
+        to: unavailable
+        covers: [B8, B9]
+      - id: F2.T30
+        from: loading
+        event: Lose viewing access
+        to: unavailable
+        covers: [B8, B9]
+      - id: F2.T31
+        from: viewer
+        event: Lose viewing access
+        to: unavailable
+        covers: [B8, B9]
+      - id: F2.T32
+        from: fallback
+        event: Lose viewing access
+        to: unavailable
+        covers: [B8, B9]
+      - id: F2.T33
+        from: renewing
+        event: Lose viewing access
+        to: unavailable
+        covers: [B8, B9]
+      - id: F2.T34
+        from: collection
+        event: Leave
+        to: left
+        covers: [B18, B19]
+      - id: F2.T35
+        from: loading
+        event: Leave
+        to: left
+        covers: [B18, B19]
+      - id: F2.T36
+        from: viewer
+        event: Leave
+        to: left
+        covers: [B11, B12, B13, B18, B19]
+      - id: F2.T37
+        from: fallback
+        event: Leave
+        to: left
+        covers: [B18, B19]
+      - id: F2.T38
+        from: renewing
+        event: Leave
+        to: left
+        covers: [B9, B18, B19]
+      - id: F2.T39
+        from: collection
+        event: Listed files change
+        to: entry
+        outcome: Restore the valid collection or direct-file state without granting new access.
+        covers: [B2, B3, B5, B8]
+      - id: F2.T40
+        from: loading
+        event: Listed files change
+        to: entry
+        outcome: A missing selection returns to the collection or sole remaining file with an explanation.
+        covers: [B2, B5, B8, B18]
+      - id: F2.T41
+        from: viewer
+        event: Listed files change
+        to: entry
+        outcome: Preserve a surviving selection; otherwise release its resources and explain the changed list.
+        covers: [B2, B5, B8, B18]
+      - id: F2.T42
+        from: fallback
+        event: Listed files change
+        to: entry
+        covers: [B2, B5, B8]
+      - id: F2.T43
+        from: renewing
+        event: Listed files change
+        to: entry
+        outcome: Stale renewal cannot restore a removed selection.
+        covers: [B2, B5, B8, B18]
+      - id: F2.T44
+        from: entry
+        event: Viewing state restored
+        to: empty
+        covers: [B2, B3, B5, B8, B18]

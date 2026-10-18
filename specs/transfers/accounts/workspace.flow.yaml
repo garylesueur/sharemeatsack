@@ -1,0 +1,1337 @@
+version: 1
+flows:
+  - id: F1
+    name: Send files from My files
+    start: library
+    states:
+      - id: library
+        kind: screen
+        label: My files
+      - id: compose
+        kind: screen
+        label: Choose eligible files and send details
+      - id: creating
+        kind: action
+        label: Establish the send and its file references together
+      - id: retry
+        kind: screen
+        label: Explain creation failure or uncertain result
+      - id: sent
+        kind: screen
+        label: Owned send detail in Sent
+      - id: sharing
+        kind: action
+        label: Copy the public link or open a sharing route
+      - id: share_failed
+        kind: screen
+        label: Explain sharing failure and offer Retry
+      - id: unavailable
+        kind: screen
+        label: Explain why this send cannot be shared
+      - id: cancelling
+        kind: action
+        label: Cancel this owned send under its existing rules
+      - id: cancel_failed
+        kind: screen
+        label: Explain cancellation failure and current status
+      - id: left
+        kind: terminal
+        label: Leave the send journey
+        outcome: Unsubmitted choices publish nothing; an established send remains in Sent with its current status.
+    transitions:
+      - id: F1.T1
+        from: library
+        event: Create a send
+        guard: The person is signed in and can select at least one eligible owned library file.
+        to: compose
+        covers: [B1, B6]
+      - id: F1.T2
+        from: library
+        event: Create a send
+        to: library
+        outcome: Explain missing account access or unavailable files; no send is created.
+        covers: [B1, B6]
+      - id: F1.T3
+        from: library
+        event: Leave
+        to: left
+        covers: [B1]
+      - id: F1.T4
+        from: compose
+        event: Back or cancel
+        to: library
+        outcome: Discard the unsubmitted choices without creating a public link.
+        covers: [B6]
+      - id: F1.T5
+        from: compose
+        event: Create send
+        guard: The title, expiry and selected files meet the existing send rules.
+        to: creating
+        covers: [B2, B6]
+      - id: F1.T6
+        from: compose
+        event: Create send
+        to: compose
+        outcome: Explain invalid details or selection beside the relevant controls; retain editable choices.
+        covers: [B6]
+      - id: F1.T7
+        from: creating
+        event: Creation resolves
+        guard: Creation establishes the send with owner access and every selected file still eligible, or returns this same already-established send to its authorised owner.
+        to: sent
+        outcome: One send appears in Sent; file references are established together, without a second byte charge or duplicate creation event.
+        covers: [B1, B2, B6]
+      - id: F1.T8
+        from: creating
+        event: Creation resolves
+        guard: This creation has not established a send, the account can still use My files, and a source file is blocked, removed or otherwise ineligible.
+        to: compose
+        outcome: Explain the changed selection; no new send or reference is attached to a removed file.
+        covers: [B1, B6]
+      - id: F1.T9
+        from: creating
+        event: Creation resolves
+        guard: Account access has ended.
+        to: unavailable
+        outcome: No new send is established without account authority.
+        covers: [B2, B6]
+      - id: F1.T10
+        from: creating
+        event: Creation resolves
+        to: retry
+        outcome: Explain the service failure or uncertain response; a retry checks the same creation before attempting another.
+        covers: [B2, B6]
+      - id: F1.T11
+        from: retry
+        event: Retry
+        to: creating
+        outcome: Continue the same creation, preserving its original expiry and avoiding duplicate sends, references or events.
+        covers: [B2, B6]
+      - id: F1.T31
+        from: retry
+        event: Edit submitted details
+        to: compose
+        outcome: Explain that changed details start a new creation; the original uncertain send remains discoverable if it already succeeded.
+        covers: [B2, B6]
+      - id: F1.T12
+        from: retry
+        event: Back or cancel
+        to: library
+        outcome: Stop waiting; an already-established send remains discoverable in Sent, and its status is not misreported as cancelled.
+        covers: [B2, B6]
+      - id: F1.T13
+        from: sent
+        event: Share
+        guard: The send's public link is live and its files are available under the existing recipient rules.
+        to: sharing
+        covers: [B6]
+      - id: F1.T14
+        from: sent
+        event: Share
+        to: unavailable
+        outcome: Explain pending, expired, cancelled or unavailable status; do not offer an unusable link as shared content.
+        covers: [B2, B6]
+      - id: F1.T15
+        from: sharing
+        event: Sharing resolves
+        guard: The public link was copied or the chosen route opened successfully.
+        to: sent
+        outcome: Report copying or opening the route accurately; share only the public link, never a manage secret or temporary storage URL, and explain that anyone with the link can access available files.
+        covers: [B6]
+      - id: F1.T16
+        from: sharing
+        event: Sharing resolves
+        guard: The person cancelled the device sharing route.
+        to: sent
+        outcome: The send remains available; cancellation is not reported as delivery.
+        covers: [B6]
+      - id: F1.T17
+        from: sharing
+        event: Sharing resolves
+        to: share_failed
+        outcome: Explain the failed copy or route without claiming delivery or recording a successful sharing action.
+        covers: [B6]
+      - id: F1.T18
+        from: share_failed
+        event: Retry
+        to: sharing
+        covers: [B6]
+      - id: F1.T19
+        from: share_failed
+        event: Back or cancel
+        to: sent
+        covers: [B6]
+      - id: F1.T20
+        from: sent
+        event: Public availability changes
+        to: unavailable
+        outcome: Owner history remains in Sent; source library retention does not extend public-link life.
+        covers: [B1, B2, B6]
+      - id: F1.T21
+        from: unavailable
+        event: Refresh owned detail
+        guard: The person retains owner access.
+        to: sent
+        outcome: Show current history and permitted content without reopening the public link.
+        covers: [B2]
+      - id: F1.T22
+        from: unavailable
+        event: Refresh owned detail
+        to: unavailable
+        outcome: Explain ended account access without exposing private transfer details.
+        covers: [B2]
+      - id: F1.T23
+        from: unavailable
+        event: Leave
+        to: left
+        covers: [B2, B6]
+      - id: F1.T24
+        from: sent
+        event: Confirm cancellation
+        guard: The person owns the send and its existing lifecycle permits cancellation.
+        to: cancelling
+        covers: [B2]
+      - id: F1.T25
+        from: sent
+        event: Confirm cancellation
+        to: sent
+        outcome: Explain refusal under the existing lifecycle; no status is overwritten.
+        covers: [B2]
+      - id: F1.T26
+        from: cancelling
+        event: Cancellation resolves
+        guard: Cancellation succeeds or this same send was already cancelled.
+        to: unavailable
+        outcome: Public access stops; cancellation is recorded once, and library files remain retained under their own policy.
+        covers: [B1, B2, B6]
+      - id: F1.T27
+        from: cancelling
+        event: Cancellation resolves
+        to: cancel_failed
+        outcome: Explain the service failure, lost authority or terminal-state refusal without claiming cancellation.
+        covers: [B2]
+      - id: F1.T28
+        from: cancel_failed
+        event: Retry or refresh
+        to: sent
+        outcome: Refresh current permitted owner detail before offering cancellation again.
+        covers: [B2]
+      - id: F1.T29
+        from: cancel_failed
+        event: Leave
+        to: left
+        covers: [B2]
+      - id: F1.T30
+        from: sent
+        event: Leave
+        to: left
+        covers: [B2, B6]
+  - id: F2
+    name: Keep a received file in My files
+    start: request
+    states:
+      - id: request
+        kind: screen
+        label: Owned request and received files
+      - id: confirm
+        kind: screen
+        label: Confirm keeping an independent copy and its storage cost
+      - id: reserving
+        kind: action
+        label: Check source access and reserve the copy allowance once
+      - id: allowance
+        kind: screen
+        label: Explain insufficient storage allowance
+      - id: copying
+        kind: screen
+        label: Copying into private library storage
+      - id: committing
+        kind: action
+        label: Recheck eligibility and finish the independent copy
+      - id: retry
+        kind: screen
+        label: Explain recoverable keeping failure or uncertain result
+      - id: cleaning
+        kind: screen
+        label: Stop keeping and safely remove unfinished copy storage
+      - id: kept
+        kind: terminal
+        label: Kept in My files
+        outcome: One independent available library file uses its own allowance; later source expiry or deletion cannot destroy this committed copy.
+      - id: unavailable
+        kind: terminal
+        label: Received file unavailable to keep
+        outcome: Explain missing authority, ended retention, missing content or blocked scan; no new available library copy or successful keeping event is exposed.
+      - id: stopped
+        kind: terminal
+        label: Keeping stopped
+        outcome: No available copy remains; any unfinished storage is tracked until safe deletion, then its held allowance is released once.
+      - id: left
+        kind: terminal
+        label: Leave the request
+        outcome: No unsubmitted choice starts a copy; an already-started copy continues safely and its result can be found again.
+    transitions:
+      - id: F2.T1
+        from: request
+        event: Keep in My files
+        guard: The person owns this request and the received file remains retained, present and eligible under its scan rules.
+        to: confirm
+        covers: [B1, B3]
+      - id: F2.T2
+        from: request
+        event: Keep in My files
+        to: unavailable
+        covers: [B1, B3]
+      - id: F2.T3
+        from: request
+        event: Leave
+        to: left
+        covers: [B2, B3]
+      - id: F2.T4
+        from: confirm
+        event: Back or cancel
+        to: request
+        outcome: No copy or allowance reservation is created.
+        covers: [B1, B3]
+      - id: F2.T5
+        from: confirm
+        event: Confirm keep
+        to: reserving
+        covers: [B1, B3]
+      - id: F2.T6
+        from: reserving
+        event: Reservation resolves
+        guard: The person retains owner access and this keeping action has already produced its available independent copy.
+        to: kept
+        outcome: Return the existing result without charging or recording keeping again.
+        covers: [B1, B3]
+      - id: F2.T7
+        from: reserving
+        event: Reservation resolves
+        guard: No available copy has already committed, owner access and source eligibility remain valid, and reservation succeeds within the account's allowance or returns this action's existing reservation.
+        to: copying
+        outcome: Concurrent requests cannot exceed the decimal 1 GB allowance; the same keeping action holds space once.
+        covers: [B1, B3]
+      - id: F2.T8
+        from: reserving
+        event: Reservation resolves
+        guard: No available copy has already committed, owner access and source eligibility remain valid, but no existing reservation belongs to this action and the copy would exceed the allowance.
+        to: allowance
+        outcome: State the copy size and available storage; no new copy storage or reservation is created.
+        covers: [B1, B3]
+      - id: F2.T9
+        from: reserving
+        event: Reservation resolves
+        guard: No unfinished reservation or copy needs cleanup. Either owner access has ended, or no available copy has committed and source eligibility has ended.
+        to: unavailable
+        covers: [B1, B3]
+      - id: F2.T29
+        from: reserving
+        event: Reservation resolves
+        guard: No available copy has committed, owner access or source eligibility has ended, and an unfinished reservation or copy needs cleanup.
+        to: cleaning
+        outcome: A retry cannot strand reserved space when source access is lost; safely remove this unfinished copy.
+        covers: [B1, B3]
+      - id: F2.T10
+        from: reserving
+        event: Reservation resolves
+        to: retry
+        outcome: Explain the service failure or uncertain response; retain the same keeping identity for reconciliation.
+        covers: [B1, B3]
+      - id: F2.T11
+        from: allowance
+        event: Retry after freeing storage
+        to: reserving
+        outcome: Recheck current source eligibility and allowance before doing any copying.
+        covers: [B1, B3]
+      - id: F2.T12
+        from: allowance
+        event: Back or cancel
+        to: request
+        covers: [B1, B3]
+      - id: F2.T13
+        from: copying
+        event: Copy finishes
+        to: committing
+        covers: [B1, B3]
+      - id: F2.T14
+        from: copying
+        event: Copy fails
+        guard: The source and account are still eligible and the failure is recoverable.
+        to: retry
+        outcome: Explain failure; unfinished content remains private and tracked while the same action can retry.
+        covers: [B1, B3]
+      - id: F2.T15
+        from: copying
+        event: Copy fails
+        to: cleaning
+        outcome: Stop an unrecoverable or ineligible copy; do not expose partial content as a library file.
+        covers: [B1, B3]
+      - id: F2.T16
+        from: copying
+        event: Source access or retention ends
+        to: cleaning
+        outcome: Losing source authority before the independent copy commits cannot be bypassed by a stale copy result.
+        covers: [B1, B3]
+      - id: F2.T17
+        from: copying
+        event: Cancel keeping
+        to: cleaning
+        outcome: Stop this unfinished keeping action; a late copy result remains tracked and cannot restore cancelled content.
+        covers: [B1, B3]
+      - id: F2.T18
+        from: copying
+        event: Leave
+        to: left
+        outcome: Leaving the page alone does not cancel an accepted action or start another copy on return.
+        covers: [B1, B3]
+      - id: F2.T19
+        from: committing
+        event: Keeping resolves
+        guard: Owner access remains valid. Either source authority, retention, file identity and accepted scan status are still valid with a complete independent copy, or this same keeping action already succeeded.
+        to: kept
+        outcome: Preserve source provenance and truthful scan status; charge and record successful keeping once.
+        covers: [B1, B3]
+      - id: F2.T20
+        from: committing
+        event: Keeping resolves
+        guard: This action has not committed and authority, retention, file identity or copy eligibility was lost, or this unfinished keeping action was cancelled.
+        to: cleaning
+        outcome: Refuse publication even if storage copying finished; remove only this unfinished copy under safe cleanup rules.
+        covers: [B1, B3]
+      - id: F2.T30
+        from: committing
+        event: Keeping resolves
+        guard: This same keeping action already committed but current owner access has ended.
+        to: unavailable
+        outcome: Do not reveal the committed private copy to a person without account authority.
+        covers: [B1, B3]
+      - id: F2.T21
+        from: committing
+        event: Keeping resolves
+        to: retry
+        outcome: Explain the service failure or uncertain response; reconcile the same keeping action before copying again.
+        covers: [B1, B3]
+      - id: F2.T22
+        from: retry
+        event: Retry
+        to: reserving
+        outcome: Continue the same keeping action; reuse or find its result without duplicate reservations, copies or events.
+        covers: [B1, B3]
+      - id: F2.T23
+        from: retry
+        event: Cancel keeping
+        to: cleaning
+        outcome: Reconcile any successful result first; cancellation does not silently remove an already-committed library file.
+        covers: [B1, B3]
+      - id: F2.T24
+        from: retry
+        event: Leave
+        to: left
+        covers: [B1, B3]
+      - id: F2.T25
+        from: cleaning
+        event: Cleanup resolves
+        guard: Reconciliation finds that this same keeping action committed successfully before cancellation.
+        to: kept
+        outcome: Show the retained result; removal of an available library file is a separate explicit action.
+        covers: [B1, B3]
+      - id: F2.T26
+        from: cleaning
+        event: Cleanup resolves
+        guard: The action did not commit and every unfinished object is confirmed absent after all possible outstanding writes.
+        to: stopped
+        outcome: Release its held allowance once; do not change the source request or remove any other file.
+        covers: [B1, B3]
+      - id: F2.T27
+        from: cleaning
+        event: Cleanup resolves
+        to: cleaning
+        outcome: Explain pending cleanup; retain the hidden reservation and retry safely until deletion is confirmed.
+        covers: [B1, B3]
+      - id: F2.T28
+        from: cleaning
+        event: Leave
+        to: left
+        outcome: Cleanup continues without a returning owner; leaving does not expose unfinished content or release unsafe storage.
+        covers: [B1, B3]
+  - id: F3
+    name: Share a public send or discover the product
+    start: access
+    states:
+      - id: access
+        kind: action
+        label: Check current public send availability
+      - id: send
+        kind: screen
+        label: Available files and public sharing controls
+      - id: copying
+        kind: action
+        label: Copy only the canonical public transfer link
+      - id: device
+        kind: action
+        label: Open the supported device sharing route
+      - id: email
+        kind: action
+        label: Hand the public link to an email draft route
+      - id: fallback
+        kind: screen
+        label: Selectable public link and useful retry
+      - id: unavailable
+        kind: screen
+        label: Sharing unavailable with its current reason
+      - id: product
+        kind: terminal
+        label: Open the product install guide
+        outcome: The person can connect their existing agent and start their own transfer; the original upload or download requires no account.
+      - id: left
+        kind: terminal
+        label: Leave the public transfer
+        outcome: No new transfer, message, private account event or recipient tracking is created.
+    transitions:
+      - id: F3.T1
+        from: access
+        event: Availability checked
+        guard: This is a ready unexpired public send with a valid canonical recipient link.
+        to: send
+        covers: [B6, B7]
+      - id: F3.T2
+        from: access
+        event: Availability checked
+        to: unavailable
+        outcome: Explain pending, expired, cancelled or invalid access without exposing private links or reviving unavailable files.
+        covers: [B6, B7]
+      - id: F3.T3
+        from: send
+        event: Copy public link
+        guard: The public link is still available and clipboard copying is supported.
+        to: copying
+        covers: [B6]
+      - id: F3.T4
+        from: send
+        event: Copy public link
+        guard: The public link is still available but clipboard copying is unsupported.
+        to: fallback
+        outcome: Show the usable public link for selection instead of claiming it was copied.
+        covers: [B6]
+      - id: F3.T5
+        from: send
+        event: Copy public link
+        to: unavailable
+        outcome: Explain ended access; do not copy an expired link.
+        covers: [B6, B7]
+      - id: F3.T6
+        from: copying
+        event: Copy resolves
+        guard: Clipboard copying completed while the link remained available.
+        to: send
+        outcome: Report Public link copied; never claim delivery to a person.
+        covers: [B6]
+      - id: F3.T7
+        from: copying
+        event: Copy resolves
+        guard: Public access ended before copying could be confirmed.
+        to: unavailable
+        outcome: Explain that sharing is no longer available; do not report successful sharing.
+        covers: [B6, B7]
+      - id: F3.T8
+        from: copying
+        event: Copy resolves
+        to: fallback
+        outcome: Explain clipboard failure and show the selectable public link with Retry.
+        covers: [B6]
+      - id: F3.T9
+        from: send
+        event: Use device Share
+        guard: Device sharing is supported and public access remains available.
+        to: device
+        covers: [B6]
+      - id: F3.T10
+        from: send
+        event: Use device Share
+        to: unavailable
+        outcome: No sharing route is opened after public access ends; unsupported devices retain Copy and email controls instead.
+        covers: [B6, B7]
+      - id: F3.T11
+        from: device
+        event: Device route resolves
+        guard: The sharing capability completed and public access remains available.
+        to: send
+        outcome: Report that the device sharing action completed; this does not prove recipient delivery.
+        covers: [B6]
+      - id: F3.T12
+        from: device
+        event: Device route resolves
+        guard: The person cancelled the device route and public access remains available.
+        to: send
+        outcome: Report Sharing cancelled without a successful sharing outcome.
+        covers: [B6]
+      - id: F3.T13
+        from: device
+        event: Device route resolves
+        guard: Public access ended.
+        to: unavailable
+        covers: [B6, B7]
+      - id: F3.T14
+        from: device
+        event: Device route resolves
+        to: fallback
+        outcome: Explain the route failure; allow public-link selection, Copy retry or an email draft route.
+        covers: [B6]
+      - id: F3.T15
+        from: send
+        event: Use email link
+        guard: Public access remains available.
+        to: email
+        covers: [B6]
+      - id: F3.T16
+        from: send
+        event: Use email link
+        to: unavailable
+        covers: [B6, B7]
+      - id: F3.T17
+        from: email
+        event: Email route requested
+        to: send
+        outcome: Report only the email-app handoff request; the person sends the draft themselves, and no delivery is assumed.
+        covers: [B6]
+      - id: F3.T18
+        from: fallback
+        event: Retry Copy
+        guard: Public access remains available and clipboard copying is supported.
+        to: copying
+        covers: [B6]
+      - id: F3.T19
+        from: fallback
+        event: Retry Copy
+        guard: Public access remains available but clipboard copying is unsupported.
+        to: fallback
+        outcome: Keep the public link selectable for manual copying.
+        covers: [B6]
+      - id: F3.T20
+        from: fallback
+        event: Retry Copy
+        to: unavailable
+        covers: [B6, B7]
+      - id: F3.T21
+        from: fallback
+        event: Select public link manually
+        to: fallback
+        outcome: The link is selectable without claiming that selection copied or delivered it.
+        covers: [B6]
+      - id: F3.T22
+        from: fallback
+        event: Use email link
+        guard: Public access remains available.
+        to: email
+        covers: [B6]
+      - id: F3.T23
+        from: fallback
+        event: Use email link
+        to: unavailable
+        covers: [B6, B7]
+      - id: F3.T24
+        from: send
+        event: Public availability ends
+        to: unavailable
+        covers: [B6, B7]
+      - id: F3.T25
+        from: fallback
+        event: Public availability ends
+        to: unavailable
+        covers: [B6, B7]
+      - id: F3.T26
+        from: send
+        event: Open product entry
+        to: product
+        covers: [B7]
+      - id: F3.T27
+        from: unavailable
+        event: Open product entry
+        to: product
+        covers: [B7]
+      - id: F3.T28
+        from: fallback
+        event: Open product entry
+        to: product
+        covers: [B7]
+      - id: F3.T29
+        from: send
+        event: Leave
+        to: left
+        covers: [B6, B7]
+      - id: F3.T30
+        from: unavailable
+        event: Leave
+        to: left
+        covers: [B7]
+      - id: F3.T31
+        from: fallback
+        event: Leave
+        to: left
+        covers: [B6, B7]
+      - id: F3.T32
+        from: copying
+        event: Leave
+        to: left
+        outcome: Leaving does not create a delivery claim or private account event even if the platform copy later finishes.
+        covers: [B6, B7]
+      - id: F3.T33
+        from: device
+        event: Leave
+        to: left
+        outcome: The platform route may still resolve; no recipient delivery or private account activity is inferred.
+        covers: [B6, B7]
+      - id: F3.T34
+        from: email
+        event: Leave
+        to: left
+        outcome: No application message is sent or delivery inferred from the requested email-app handoff.
+        covers: [B6, B7]
+  - id: F4
+    name: Save an incoming transfer and keep an eligible file
+    start: entry
+    states:
+      - id: entry
+        kind: screen
+        label: "Public transfer or signed-in Incoming list"
+      - id: landing
+        kind: action
+        label: "Validate the public link and remove its fragment from the address"
+      - id: signin
+        kind: screen
+        label: "Sign in to Share Incoming with a bounded one-tab intent"
+      - id: fallback
+        kind: screen
+        label: "Selectable public link or paste recovery in Incoming"
+      - id: reviewing
+        kind: action
+        label: "Check the current account and original recipient access"
+      - id: confirm
+        kind: screen
+        label: "Current account, recipient role and explicit Save"
+      - id: saving
+        kind: action
+        label: "Save one private reference with current account authority"
+      - id: save_retry
+        kind: screen
+        label: "Explain save failure or uncertain result"
+      - id: reading
+        kind: action
+        label: "Read this account saved reference and current source availability"
+      - id: incoming
+        kind: screen
+        label: "Saved transfer with its existing recipient actions"
+      - id: upload
+        kind: screen
+        label: "Existing public upload-request journey"
+      - id: keep_confirm
+        kind: screen
+        label: "Confirm independent copy size, allowance and provenance"
+      - id: reserving
+        kind: action
+        label: "Recheck recipient eligibility and reserve allowance once"
+      - id: allowance
+        kind: screen
+        label: "Insufficient storage for this independent copy"
+      - id: copying
+        kind: screen
+        label: "Copying privately into My files"
+      - id: committing
+        kind: action
+        label: "Recheck current source access and commit the independent copy"
+      - id: keep_retry
+        kind: screen
+        label: "Explain keeping failure or uncertain result"
+      - id: cleaning
+        kind: screen
+        label: "Safely remove unfinished copy storage"
+      - id: kept
+        kind: screen
+        label: "Independent file kept in My files"
+      - id: unavailable
+        kind: screen
+        label: "Unavailable source or account access with recovery"
+      - id: stopped
+        kind: screen
+        label: "Keeping stopped after safe cleanup"
+      - id: left
+        kind: terminal
+        label: "Leave the incoming journey"
+        outcome: "Unsubmitted choices save or keep nothing; accepted actions reconcile for their original account, and cleanup continues safely without a return."
+    transitions:
+      - id: F4.T1
+        from: entry
+        event: "Save to my account"
+        to: landing
+        outcome: "Open only the fixed portal /save/sharemeatsack#url=encoded-canonical-public-URL destination; public upload/download still needs no sign-in."
+        covers: [B4]
+      - id: F4.T2
+        from: entry
+        event: "Open saved Incoming item"
+        to: reading
+        outcome: "Use only its account-scoped saved-row ID in the portal route, never its recipient token or a private manage proof."
+        covers: [B4]
+      - id: F4.T3
+        from: entry
+        event: "Leave"
+        to: left
+        covers: [B4]
+      - id: F4.T4
+        from: landing
+        event: "Landing resolves"
+        guard: "The canonical public recipient URL is valid, the person is already signed in, and the one-tab intent was stored successfully."
+        to: reviewing
+        outcome: "Strip the fragment immediately; store one sessionStorage intent with its original 15-minute deadline."
+        covers: [B4]
+      - id: F4.T5
+        from: landing
+        event: "Landing resolves"
+        guard: "The canonical public recipient URL is valid, the person is signed out, and the one-tab intent was stored successfully."
+        to: signin
+        outcome: "Strip the fragment immediately; continue sign-in with product=sharemeatsack&section=incoming only. No public token enters auth/redirect queries, cookies or activity."
+        covers: [B4]
+      - id: F4.T6
+        from: landing
+        event: "Landing resolves"
+        guard: "The canonical public recipient URL is valid but tab storage is blocked or fails."
+        to: fallback
+        outcome: "Strip the fragment immediately; explain the limitation and keep the link selectable for copying before sign-in and pasting in Incoming."
+        covers: [B4]
+      - id: F4.T7
+        from: landing
+        event: "Landing resolves"
+        to: fallback
+        outcome: "Strip the fragment and refuse invalid URLs, manage proofs, storage URLs or arbitrary redirect destinations; offer a canonical public-link paste."
+        covers: [B4]
+      - id: F4.T8
+        from: signin
+        event: "Sign-in returns"
+        guard: "The current account is signed in, there is no saved-row return destination, and this tab has a valid unexpired intent."
+        to: reviewing
+        outcome: "Recover the intent for confirmation only; signing in creates no saved reference."
+        covers: [B4]
+      - id: F4.T9
+        from: signin
+        event: "Sign-in returns"
+        guard: "The current account is signed in, there is no saved-row return destination, and the intent is missing, expired or unreadable."
+        to: fallback
+        outcome: "Discard expired intent; offer paste recovery in Incoming without guessing a transfer."
+        covers: [B4]
+      - id: F4.T10
+        from: signin
+        event: "Sign-in returns"
+        to: signin
+        outcome: "Explain incomplete or failed sign-in; retain the original safe destination and intent deadline for Retry."
+        covers: [B4]
+      - id: F4.T11
+        from: signin
+        event: "Cancel or leave"
+        to: left
+        outcome: "Clear the pending intent; no automatic Save occurs on a later sign-in."
+        covers: [B4]
+      - id: F4.T12
+        from: fallback
+        event: "Continue sign-in"
+        guard: "The person is signed out."
+        to: signin
+        outcome: "Use only the fixed Share Incoming sign-in destination; copy the selectable link first if tab storage is unavailable."
+        covers: [B4]
+      - id: F4.T13
+        from: fallback
+        event: "Continue sign-in"
+        to: fallback
+        outcome: "The signed-in person can paste a public link here; sign-in alone never saves it."
+        covers: [B4]
+      - id: F4.T14
+        from: fallback
+        event: "Paste public link"
+        guard: "The person is signed in and the pasted URL is a valid canonical public recipient URL."
+        to: reviewing
+        outcome: "Begin a fresh 15-minute intent and validate live access; if persistence fails retain the choice only on this screen and explain recovery."
+        covers: [B4]
+      - id: F4.T15
+        from: fallback
+        event: "Paste public link"
+        to: fallback
+        outcome: "Explain the invalid link or required sign-in beside the field; do not expose private proof or save anything."
+        covers: [B4]
+      - id: F4.T16
+        from: fallback
+        event: "Cancel or leave"
+        to: left
+        outcome: "Clear any pending intent and pasted choice."
+        covers: [B4]
+      - id: F4.T17
+        from: reviewing
+        event: "Review resolves"
+        guard: "The current account is signed in and this intent remains valid with live original recipient access."
+        to: confirm
+        outcome: "Show the current account, send/download or request/upload role, and separate explicit Save; do not save during validation."
+        covers: [B4]
+      - id: F4.T18
+        from: reviewing
+        event: "Review resolves"
+        guard: "The current account is signed in but the intent is missing or expired."
+        to: fallback
+        outcome: "Clear expired intent and offer paste recovery."
+        covers: [B4]
+      - id: F4.T19
+        from: reviewing
+        event: "Review resolves"
+        guard: "The person is signed out."
+        to: signin
+        outcome: "Retain only the safe Incoming destination and a still-valid one-tab intent; no private result crosses the session change."
+        covers: [B4]
+      - id: F4.T20
+        from: reviewing
+        event: "Review resolves"
+        to: unavailable
+        outcome: "Explain revoked, expired, missing or temporarily unreadable source access; no new reference is saved, including after source loss during sign-in."
+        covers: [B4]
+      - id: F4.T21
+        from: confirm
+        event: "Save"
+        guard: "The person explicitly chooses Save for the current displayed account and the intent remains valid."
+        to: saving
+        outcome: "Submit only the canonical recipient reference, never ownership or a private manage proof."
+        covers: [B4]
+      - id: F4.T22
+        from: confirm
+        event: "Save"
+        to: reviewing
+        outcome: "Recheck the account or expired intent before another confirmation; no implicit Save follows an account change."
+        covers: [B4]
+      - id: F4.T23
+        from: confirm
+        event: "Change account"
+        to: signin
+        outcome: "Discard displayed private results and any submitted-action identity; a later account must receive a fresh confirmation."
+        covers: [B4]
+      - id: F4.T24
+        from: confirm
+        event: "Source availability changes"
+        to: unavailable
+        outcome: "Do not save a new reference after original access ends."
+        covers: [B4]
+      - id: F4.T25
+        from: confirm
+        event: "Back or cancel"
+        to: left
+        outcome: "Clear the intent without saving or keeping bytes."
+        covers: [B4]
+      - id: F4.T26
+        from: saving
+        event: "Save resolves"
+        guard: "The same account retains authority and this action committed its reference or finds that account existing reference."
+        to: reading
+        outcome: "One Incoming row is discoverable; store no file bytes or allowance charge, record successful Save once, and clear the pending intent."
+        covers: [B4]
+      - id: F4.T27
+        from: saving
+        event: "Save resolves"
+        guard: "No reference committed and source access ended, or the submitting account no longer has authority."
+        to: unavailable
+        outcome: "Do not save a new unavailable link or reveal the original account result to another account."
+        covers: [B4]
+      - id: F4.T28
+        from: saving
+        event: "Save resolves"
+        to: save_retry
+        outcome: "Explain failure or an uncertain response; preserve the same save identity for the original account within the original intent deadline."
+        covers: [B4]
+      - id: F4.T29
+        from: save_retry
+        event: "Retry"
+        guard: "The same account has authority and the original intent remains valid."
+        to: saving
+        outcome: "Reconcile the same Save before creating anything; no duplicate row or success event."
+        covers: [B4]
+      - id: F4.T30
+        from: save_retry
+        event: "Retry"
+        to: reviewing
+        outcome: "Recheck current account and intent; another account must confirm a fresh Save, and expired intent needs paste recovery."
+        covers: [B4]
+      - id: F4.T31
+        from: save_retry
+        event: "Back or cancel"
+        to: left
+        outcome: "Clear the pending intent; an already-committed reference stays discoverable for its account and is not falsely reported as cancelled."
+        covers: [B4]
+      - id: F4.T32
+        from: reading
+        event: "Saved detail resolves"
+        guard: "The current account owns the saved row and its original link remains available."
+        to: incoming
+        outcome: "Show only its existing recipient powers; an upload request never reveals another person receipt or owner management."
+        covers: [B4]
+      - id: F4.T33
+        from: reading
+        event: "Saved detail resolves"
+        guard: "The current account owns the saved row but original access is expired, revoked, deleted or unavailable."
+        to: unavailable
+        outcome: "Keep the private reference discoverable with its reason; show an authoritative available independent kept copy when one exists without reopening the source."
+        covers: [B4]
+      - id: F4.T34
+        from: reading
+        event: "Saved detail resolves"
+        to: unavailable
+        outcome: "Explain missing or ended account access without revealing a foreign row, public token, source detail or private library copy."
+        covers: [B4]
+      - id: F4.T35
+        from: incoming
+        event: "Open or download send file"
+        guard: "The reference is a send and current recipient access permits that file read."
+        to: reading
+        outcome: "Use existing recipient download checks; a stale saved row cannot authorize a blocked, removed or expired file."
+        covers: [B4]
+      - id: F4.T36
+        from: incoming
+        event: "Open or download send file"
+        to: unavailable
+        outcome: "Refuse an ineligible file or upload-role request without revealing receipt files."
+        covers: [B4]
+      - id: F4.T37
+        from: incoming
+        event: "Supply files"
+        guard: "The reference is an upload request and its existing public upload rules still permit supplying files."
+        to: upload
+        outcome: "Enter the original upload journey only; saving adds no receipt browsing, management or keeping powers."
+        covers: [B4]
+      - id: F4.T38
+        from: incoming
+        event: "Supply files"
+        to: unavailable
+        outcome: "Explain closed, expired or otherwise unavailable upload access."
+        covers: [B4]
+      - id: F4.T39
+        from: upload
+        event: "Return to Incoming"
+        to: reading
+        outcome: "Refresh only the account reference and existing request availability; never browse other people uploads."
+        covers: [B4]
+      - id: F4.T40
+        from: upload
+        event: "Leave"
+        to: left
+        covers: [B4]
+      - id: F4.T41
+        from: incoming
+        event: "Keep in My files"
+        guard: "The same account already has an authoritative available independent copy for this source file."
+        to: kept
+        outcome: "Show Kept in My files and Open kept file without a new reservation or charge."
+        covers: [B1, B4]
+      - id: F4.T42
+        from: incoming
+        event: "Keep in My files"
+        guard: "No available independent copy exists, the saved reference is a newer account-backed durable send, and the source supports authoritative commit-time checks with current recipient download access, retained bytes and a clean or truthfully too-large scan."
+        to: keep_confirm
+        outcome: "State copy size, storage cost, source provenance and scan warning; no automatic keeping."
+        covers: [B1, B4]
+      - id: F4.T43
+        from: incoming
+        event: "Keep in My files"
+        to: unavailable
+        outcome: "Explain legacy_source for existing legacy sends, unavailable source access, pending/blocked scan or upload-only role; no new available copy."
+        covers: [B1, B4]
+      - id: F4.T44
+        from: incoming
+        event: "Original access ends"
+        to: unavailable
+        outcome: "The reference remains saved but original recipient access ends; an already-committed independent copy retains its own lifecycle."
+        covers: [B4]
+      - id: F4.T45
+        from: incoming
+        event: "Account changes or session ends"
+        to: unavailable
+        outcome: "Stop private access and discard prior account results; no cross-account reuse."
+        covers: [B4]
+      - id: F4.T46
+        from: incoming
+        event: "Leave"
+        to: left
+        covers: [B4]
+      - id: F4.T47
+        from: keep_confirm
+        event: "Confirm keep"
+        to: reserving
+        covers: [B1, B4]
+      - id: F4.T48
+        from: keep_confirm
+        event: "Back or cancel"
+        to: reading
+        outcome: "No copy or allowance reservation is created."
+        covers: [B1, B4]
+      - id: F4.T49
+        from: reserving
+        event: "Reservation resolves"
+        guard: "The original account still has authority and this keeping action already committed an available independent copy."
+        to: kept
+        outcome: "Return that same copy without another charge or success outcome."
+        covers: [B1, B4]
+      - id: F4.T50
+        from: reserving
+        event: "Reservation resolves"
+        guard: "This action is uncommitted and uncancelled, current account and authoritative durable source access remain eligible, and the atomic reservation succeeds within allowance or returns this action existing reservation."
+        to: copying
+        outcome: "Hold storage once within decimal 1 GB, including competing keeps; source ownership is unchanged."
+        covers: [B1, B4]
+      - id: F4.T51
+        from: reserving
+        event: "Reservation resolves"
+        guard: "This action is uncommitted and uncancelled, current account and durable source remain eligible, and no reservation exists for this action but its size would exceed allowance."
+        to: allowance
+        outcome: "Show size and available storage; saving remains valid and no copy or new reservation is created."
+        covers: [B1, B4]
+      - id: F4.T52
+        from: reserving
+        event: "Reservation resolves"
+        guard: "This action has not committed and has unfinished storage or a reservation; either it was cancelled or account/source eligibility ended."
+        to: cleaning
+        outcome: "Track safe cleanup rather than strand allowance or publish stale content."
+        covers: [B1, B4]
+      - id: F4.T53
+        from: reserving
+        event: "Reservation resolves"
+        guard: "This action has not committed and no unfinished copy or reservation needs cleanup; either it was cancelled or account access or source eligibility ended."
+        to: unavailable
+        outcome: "Reveal no private copy to another account and create no new copy."
+        covers: [B1, B4]
+      - id: F4.T54
+        from: reserving
+        event: "Reservation resolves"
+        to: keep_retry
+        outcome: "Explain service failure or uncertain result; keep the same action identity for reconciliation."
+        covers: [B1, B4]
+      - id: F4.T55
+        from: allowance
+        event: "Retry after freeing storage"
+        to: reserving
+        outcome: "Recheck live access, scan, source identity and atomic allowance before copying."
+        covers: [B1, B4]
+      - id: F4.T56
+        from: allowance
+        event: "Back or cancel"
+        to: reading
+        covers: [B1, B4]
+      - id: F4.T57
+        from: copying
+        event: "Copy finishes"
+        to: committing
+        covers: [B1, B4]
+      - id: F4.T58
+        from: copying
+        event: "Copy fails"
+        guard: "Account and authoritative source access remain eligible and the failure is recoverable."
+        to: keep_retry
+        outcome: "Unfinished content stays private and tracked for this same action."
+        covers: [B1, B4]
+      - id: F4.T59
+        from: copying
+        event: "Copy fails"
+        to: cleaning
+        outcome: "Stop an ineligible or unrecoverable copy; no partial library file becomes available."
+        covers: [B1, B4]
+      - id: F4.T60
+        from: copying
+        event: "Account or source access ends"
+        to: cleaning
+        outcome: "Loss of recipient access, retention, source identity or scan eligibility before commit cannot be bypassed by already-copied bytes."
+        covers: [B1, B4]
+      - id: F4.T61
+        from: copying
+        event: "Cancel keeping"
+        to: cleaning
+        outcome: "Stop this unfinished action; late writes cannot resurrect cancelled content."
+        covers: [B1, B4]
+      - id: F4.T62
+        from: copying
+        event: "Leave"
+        to: left
+        outcome: "Leaving alone does not cancel an accepted copy; its original account can later find the reconciled result."
+        covers: [B1, B4]
+      - id: F4.T63
+        from: committing
+        event: "Keeping resolves"
+        guard: "The same account retains authority and this action already committed an available independent copy, or this action is uncommitted and uncancelled, the same account retains authority, and authoritative source access, identity, retention and accepted scan still permit a complete independent copy."
+        to: kept
+        outcome: "Commit one independently stored file, its provenance and truthful warning, allowance charge and successful keep outcome once."
+        covers: [B1, B4]
+      - id: F4.T64
+        from: committing
+        event: "Keeping resolves"
+        guard: "This action already committed but current account authority ended."
+        to: unavailable
+        outcome: "Do not reveal the retained private copy to a signed-out person or another account."
+        covers: [B1, B4]
+      - id: F4.T65
+        from: committing
+        event: "Keeping resolves"
+        guard: "This action has not committed and either it was cancelled or account/source/retention/identity/scan eligibility ended."
+        to: cleaning
+        outcome: "Refuse publication despite completed storage copying and safely remove only this action unfinished storage."
+        covers: [B1, B4]
+      - id: F4.T66
+        from: committing
+        event: "Keeping resolves"
+        to: keep_retry
+        outcome: "Explain service failure or uncertainty; reconcile before starting more storage work."
+        covers: [B1, B4]
+      - id: F4.T67
+        from: keep_retry
+        event: "Retry"
+        to: reserving
+        outcome: "Reconcile the same action for its original account, recheck access and reuse its reservation/result without duplicate copies or charges."
+        covers: [B1, B4]
+      - id: F4.T68
+        from: keep_retry
+        event: "Cancel keeping"
+        to: cleaning
+        outcome: "Reconcile any committed result first; cancellation never silently deletes an available kept file."
+        covers: [B1, B4]
+      - id: F4.T69
+        from: keep_retry
+        event: "Leave"
+        to: left
+        covers: [B1, B4]
+      - id: F4.T70
+        from: cleaning
+        event: "Cleanup resolves"
+        guard: "Reconciliation finds this action committed an available independent copy before cancellation and the same account still has authority."
+        to: kept
+        outcome: "Show the kept result; removing it requires the separate explicit My files action."
+        covers: [B1, B4]
+      - id: F4.T71
+        from: cleaning
+        event: "Cleanup resolves"
+        guard: "Reconciliation finds this action committed before cancellation but current account authority ended."
+        to: unavailable
+        outcome: "Preserve its independent lifecycle without exposing another account private result."
+        covers: [B1, B4]
+      - id: F4.T72
+        from: cleaning
+        event: "Cleanup resolves"
+        guard: "No copy committed and all unfinished objects are confirmed absent after all possible outstanding writes."
+        to: stopped
+        outcome: "Release held allowance once; do not alter the source or another file."
+        covers: [B1, B4]
+      - id: F4.T73
+        from: cleaning
+        event: "Cleanup resolves"
+        to: cleaning
+        outcome: "Explain pending cleanup and retry durably; hold the hidden reservation until deletion is safe."
+        covers: [B1, B4]
+      - id: F4.T74
+        from: cleaning
+        event: "Leave"
+        to: left
+        outcome: "Cleanup continues without a returning account; no unsafe allowance release or unfinished file exposure."
+        covers: [B1, B4]
+      - id: F4.T75
+        from: kept
+        event: "Open kept file"
+        guard: "The same account retains authority and the independent copy remains available."
+        to: kept
+        outcome: "Read it through My files; original expiry, revocation or deletion cannot remove this committed copy."
+        covers: [B1, B4]
+      - id: F4.T76
+        from: kept
+        event: "Open kept file"
+        to: unavailable
+        outcome: "Explain missing account authority or copy removal without exposing private content."
+        covers: [B1, B4]
+      - id: F4.T77
+        from: kept
+        event: "Return to Incoming"
+        to: reading
+        outcome: "Refresh original-link status independently of the retained copy."
+        covers: [B1, B4]
+      - id: F4.T78
+        from: kept
+        event: "Leave"
+        to: left
+        covers: [B1, B4]
+      - id: F4.T79
+        from: stopped
+        event: "Return to Incoming"
+        to: reading
+        covers: [B1, B4]
+      - id: F4.T80
+        from: stopped
+        event: "Leave"
+        to: left
+        covers: [B1, B4]
+      - id: F4.T81
+        from: unavailable
+        event: "Refresh"
+        guard: "There is a saved-row ID to reread for the current account."
+        to: reading
+        outcome: "Recheck account authority and source availability; an ID never substitutes for permission."
+        covers: [B4]
+      - id: F4.T82
+        from: unavailable
+        event: "Refresh"
+        to: reviewing
+        outcome: "Recheck a still-valid pending intent only; no automatic Save or copied-byte access bypass."
+        covers: [B4]
+      - id: F4.T83
+        from: unavailable
+        event: "Paste another public link"
+        to: fallback
+        outcome: "Do not carry prior account results or keeping identities into a new Save choice."
+        covers: [B4]
+      - id: F4.T84
+        from: unavailable
+        event: "Cancel or leave"
+        to: left
+        outcome: "Clear pending intent; saved rows and committed copies keep their independent account-scoped lifecycle."
+        covers: [B4]
+      - id: F4.T85
+        from: unavailable
+        event: Open kept file
+        guard: The current account owns the saved reference and its authoritative association identifies an available independent copy.
+        to: kept
+        outcome: Original-link loss does not block this account's independent My files copy.
+        covers: [B1, B4]
+      - id: F4.T86
+        from: unavailable
+        event: Open kept file
+        to: unavailable
+        outcome: Explain missing account authority or unavailable copy without revealing private content or offering a hidden, removed or foreign copy.
+        covers: [B1, B4]
+      - id: F4.T87
+        from: unavailable
+        event: Sign in
+        to: signin
+        outcome: Preserve only the safe Share Incoming destination and a saved-row ID if present; never put the recipient URL or token in authentication queries.
+        covers: [B4]
+      - id: F4.T88
+        from: signin
+        event: Sign-in returns
+        guard: The current account is signed in and there is a saved-row return destination.
+        to: reading
+        outcome: Freshly authorize that row for the current account; a row ID grants no authority and no new Save occurs.
+        covers: [B4]
+      - id: F4.T89
+        from: reserving
+        event: Reservation resolves
+        guard: This action already committed but its private copy is no longer available to the current account.
+        to: unavailable
+        outcome: Do not recreate, recharge or reveal an unavailable or foreign copy by retrying its old action.
+        covers: [B1, B4]
+      - id: F4.T90
+        from: committing
+        event: Keeping resolves
+        guard: This action already committed, the same account retains authority, and its copy is no longer available.
+        to: unavailable
+        outcome: Reconciliation cannot resurrect a hidden, removing or removed copy.
+        covers: [B1, B4]
+      - id: F4.T91
+        from: cleaning
+        event: Cleanup resolves
+        guard: Reconciliation finds this action committed before cancellation, the same account retains authority, and its copy is no longer available.
+        to: unavailable
+        outcome: Preserve the copy's current lifecycle; do not offer unavailable content or a duplicate keep.
+        covers: [B1, B4]

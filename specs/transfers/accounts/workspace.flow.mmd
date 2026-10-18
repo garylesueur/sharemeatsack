@@ -1,0 +1,250 @@
+%% Generated from workspace.flow.yaml. Do not edit directly.
+flowchart TD
+  subgraph F1["F1: Send files from My files"]
+    F1_library["My files"]
+    F1_compose["Choose eligible files and send details"]
+    F1_creating{{"Establish the send and its file references together"}}
+    F1_retry["Explain creation failure or uncertain result"]
+    F1_sent["Owned send detail in Sent"]
+    F1_sharing{{"Copy the public link or open a sharing route"}}
+    F1_share_failed["Explain sharing failure and offer Retry"]
+    F1_unavailable["Explain why this send cannot be shared"]
+    F1_cancelling{{"Cancel this owned send under its existing rules"}}
+    F1_cancel_failed["Explain cancellation failure and current status"]
+    F1_left(["Leave the send journey"])
+    F1_library -->|"F1.T1: Create a send [The person is signed in and can select at least one eligible owned library file.]"| F1_compose
+    F1_library -->|"F1.T2: Create a send"| F1_library
+    F1_library -->|"F1.T3: Leave"| F1_left
+    F1_compose -->|"F1.T4: Back or cancel"| F1_library
+    F1_compose -->|"F1.T5: Create send [The title, expiry and selected files meet the existing send rules.]"| F1_creating
+    F1_compose -->|"F1.T6: Create send"| F1_compose
+    F1_creating -->|"F1.T7: Creation resolves [Creation establishes the send with owner access and every selected file still eligible, or returns this same already-established send to its authorised owner.]"| F1_sent
+    F1_creating -->|"F1.T8: Creation resolves [This creation has not established a send, the account can still use My files, and a source file is blocked, removed or otherwise ineligible.]"| F1_compose
+    F1_creating -->|"F1.T9: Creation resolves [Account access has ended.]"| F1_unavailable
+    F1_creating -->|"F1.T10: Creation resolves"| F1_retry
+    F1_retry -->|"F1.T11: Retry"| F1_creating
+    F1_retry -->|"F1.T31: Edit submitted details"| F1_compose
+    F1_retry -->|"F1.T12: Back or cancel"| F1_library
+    F1_sent -->|"F1.T13: Share [The send's public link is live and its files are available under the existing recipient rules.]"| F1_sharing
+    F1_sent -->|"F1.T14: Share"| F1_unavailable
+    F1_sharing -->|"F1.T15: Sharing resolves [The public link was copied or the chosen route opened successfully.]"| F1_sent
+    F1_sharing -->|"F1.T16: Sharing resolves [The person cancelled the device sharing route.]"| F1_sent
+    F1_sharing -->|"F1.T17: Sharing resolves"| F1_share_failed
+    F1_share_failed -->|"F1.T18: Retry"| F1_sharing
+    F1_share_failed -->|"F1.T19: Back or cancel"| F1_sent
+    F1_sent -->|"F1.T20: Public availability changes"| F1_unavailable
+    F1_unavailable -->|"F1.T21: Refresh owned detail [The person retains owner access.]"| F1_sent
+    F1_unavailable -->|"F1.T22: Refresh owned detail"| F1_unavailable
+    F1_unavailable -->|"F1.T23: Leave"| F1_left
+    F1_sent -->|"F1.T24: Confirm cancellation [The person owns the send and its existing lifecycle permits cancellation.]"| F1_cancelling
+    F1_sent -->|"F1.T25: Confirm cancellation"| F1_sent
+    F1_cancelling -->|"F1.T26: Cancellation resolves [Cancellation succeeds or this same send was already cancelled.]"| F1_unavailable
+    F1_cancelling -->|"F1.T27: Cancellation resolves"| F1_cancel_failed
+    F1_cancel_failed -->|"F1.T28: Retry or refresh"| F1_sent
+    F1_cancel_failed -->|"F1.T29: Leave"| F1_left
+    F1_sent -->|"F1.T30: Leave"| F1_left
+  end
+  subgraph F2["F2: Keep a received file in My files"]
+    F2_request["Owned request and received files"]
+    F2_confirm["Confirm keeping an independent copy and its storage cost"]
+    F2_reserving{{"Check source access and reserve the copy allowance once"}}
+    F2_allowance["Explain insufficient storage allowance"]
+    F2_copying["Copying into private library storage"]
+    F2_committing{{"Recheck eligibility and finish the independent copy"}}
+    F2_retry["Explain recoverable keeping failure or uncertain result"]
+    F2_cleaning["Stop keeping and safely remove unfinished copy storage"]
+    F2_kept(["Kept in My files"])
+    F2_unavailable(["Received file unavailable to keep"])
+    F2_stopped(["Keeping stopped"])
+    F2_left(["Leave the request"])
+    F2_request -->|"F2.T1: Keep in My files [The person owns this request and the received file remains retained, present and eligible under its scan rules.]"| F2_confirm
+    F2_request -->|"F2.T2: Keep in My files"| F2_unavailable
+    F2_request -->|"F2.T3: Leave"| F2_left
+    F2_confirm -->|"F2.T4: Back or cancel"| F2_request
+    F2_confirm -->|"F2.T5: Confirm keep"| F2_reserving
+    F2_reserving -->|"F2.T6: Reservation resolves [The person retains owner access and this keeping action has already produced its available independent copy.]"| F2_kept
+    F2_reserving -->|"F2.T7: Reservation resolves [No available copy has already committed, owner access and source eligibility remain valid, and reservation succeeds within the account's allowance or returns this action's existing reservation.]"| F2_copying
+    F2_reserving -->|"F2.T8: Reservation resolves [No available copy has already committed, owner access and source eligibility remain valid, but no existing reservation belongs to this action and the copy would exceed the allowance.]"| F2_allowance
+    F2_reserving -->|"F2.T9: Reservation resolves [No unfinished reservation or copy needs cleanup. Either owner access has ended, or no available copy has committed and source eligibility has ended.]"| F2_unavailable
+    F2_reserving -->|"F2.T29: Reservation resolves [No available copy has committed, owner access or source eligibility has ended, and an unfinished reservation or copy needs cleanup.]"| F2_cleaning
+    F2_reserving -->|"F2.T10: Reservation resolves"| F2_retry
+    F2_allowance -->|"F2.T11: Retry after freeing storage"| F2_reserving
+    F2_allowance -->|"F2.T12: Back or cancel"| F2_request
+    F2_copying -->|"F2.T13: Copy finishes"| F2_committing
+    F2_copying -->|"F2.T14: Copy fails [The source and account are still eligible and the failure is recoverable.]"| F2_retry
+    F2_copying -->|"F2.T15: Copy fails"| F2_cleaning
+    F2_copying -->|"F2.T16: Source access or retention ends"| F2_cleaning
+    F2_copying -->|"F2.T17: Cancel keeping"| F2_cleaning
+    F2_copying -->|"F2.T18: Leave"| F2_left
+    F2_committing -->|"F2.T19: Keeping resolves [Owner access remains valid. Either source authority, retention, file identity and accepted scan status are still valid with a complete independent copy, or this same keeping action already succeeded.]"| F2_kept
+    F2_committing -->|"F2.T20: Keeping resolves [This action has not committed and authority, retention, file identity or copy eligibility was lost, or this unfinished keeping action was cancelled.]"| F2_cleaning
+    F2_committing -->|"F2.T30: Keeping resolves [This same keeping action already committed but current owner access has ended.]"| F2_unavailable
+    F2_committing -->|"F2.T21: Keeping resolves"| F2_retry
+    F2_retry -->|"F2.T22: Retry"| F2_reserving
+    F2_retry -->|"F2.T23: Cancel keeping"| F2_cleaning
+    F2_retry -->|"F2.T24: Leave"| F2_left
+    F2_cleaning -->|"F2.T25: Cleanup resolves [Reconciliation finds that this same keeping action committed successfully before cancellation.]"| F2_kept
+    F2_cleaning -->|"F2.T26: Cleanup resolves [The action did not commit and every unfinished object is confirmed absent after all possible outstanding writes.]"| F2_stopped
+    F2_cleaning -->|"F2.T27: Cleanup resolves"| F2_cleaning
+    F2_cleaning -->|"F2.T28: Leave"| F2_left
+  end
+  subgraph F3["F3: Share a public send or discover the product"]
+    F3_access{{"Check current public send availability"}}
+    F3_send["Available files and public sharing controls"]
+    F3_copying{{"Copy only the canonical public transfer link"}}
+    F3_device{{"Open the supported device sharing route"}}
+    F3_email{{"Hand the public link to an email draft route"}}
+    F3_fallback["Selectable public link and useful retry"]
+    F3_unavailable["Sharing unavailable with its current reason"]
+    F3_product(["Open the product install guide"])
+    F3_left(["Leave the public transfer"])
+    F3_access -->|"F3.T1: Availability checked [This is a ready unexpired public send with a valid canonical recipient link.]"| F3_send
+    F3_access -->|"F3.T2: Availability checked"| F3_unavailable
+    F3_send -->|"F3.T3: Copy public link [The public link is still available and clipboard copying is supported.]"| F3_copying
+    F3_send -->|"F3.T4: Copy public link [The public link is still available but clipboard copying is unsupported.]"| F3_fallback
+    F3_send -->|"F3.T5: Copy public link"| F3_unavailable
+    F3_copying -->|"F3.T6: Copy resolves [Clipboard copying completed while the link remained available.]"| F3_send
+    F3_copying -->|"F3.T7: Copy resolves [Public access ended before copying could be confirmed.]"| F3_unavailable
+    F3_copying -->|"F3.T8: Copy resolves"| F3_fallback
+    F3_send -->|"F3.T9: Use device Share [Device sharing is supported and public access remains available.]"| F3_device
+    F3_send -->|"F3.T10: Use device Share"| F3_unavailable
+    F3_device -->|"F3.T11: Device route resolves [The sharing capability completed and public access remains available.]"| F3_send
+    F3_device -->|"F3.T12: Device route resolves [The person cancelled the device route and public access remains available.]"| F3_send
+    F3_device -->|"F3.T13: Device route resolves [Public access ended.]"| F3_unavailable
+    F3_device -->|"F3.T14: Device route resolves"| F3_fallback
+    F3_send -->|"F3.T15: Use email link [Public access remains available.]"| F3_email
+    F3_send -->|"F3.T16: Use email link"| F3_unavailable
+    F3_email -->|"F3.T17: Email route requested"| F3_send
+    F3_fallback -->|"F3.T18: Retry Copy [Public access remains available and clipboard copying is supported.]"| F3_copying
+    F3_fallback -->|"F3.T19: Retry Copy [Public access remains available but clipboard copying is unsupported.]"| F3_fallback
+    F3_fallback -->|"F3.T20: Retry Copy"| F3_unavailable
+    F3_fallback -->|"F3.T21: Select public link manually"| F3_fallback
+    F3_fallback -->|"F3.T22: Use email link [Public access remains available.]"| F3_email
+    F3_fallback -->|"F3.T23: Use email link"| F3_unavailable
+    F3_send -->|"F3.T24: Public availability ends"| F3_unavailable
+    F3_fallback -->|"F3.T25: Public availability ends"| F3_unavailable
+    F3_send -->|"F3.T26: Open product entry"| F3_product
+    F3_unavailable -->|"F3.T27: Open product entry"| F3_product
+    F3_fallback -->|"F3.T28: Open product entry"| F3_product
+    F3_send -->|"F3.T29: Leave"| F3_left
+    F3_unavailable -->|"F3.T30: Leave"| F3_left
+    F3_fallback -->|"F3.T31: Leave"| F3_left
+    F3_copying -->|"F3.T32: Leave"| F3_left
+    F3_device -->|"F3.T33: Leave"| F3_left
+    F3_email -->|"F3.T34: Leave"| F3_left
+  end
+  subgraph F4["F4: Save an incoming transfer and keep an eligible file"]
+    F4_entry["Public transfer or signed-in Incoming list"]
+    F4_landing{{"Validate the public link and remove its fragment from the address"}}
+    F4_signin["Sign in to Share Incoming with a bounded one-tab intent"]
+    F4_fallback["Selectable public link or paste recovery in Incoming"]
+    F4_reviewing{{"Check the current account and original recipient access"}}
+    F4_confirm["Current account, recipient role and explicit Save"]
+    F4_saving{{"Save one private reference with current account authority"}}
+    F4_save_retry["Explain save failure or uncertain result"]
+    F4_reading{{"Read this account saved reference and current source availability"}}
+    F4_incoming["Saved transfer with its existing recipient actions"]
+    F4_upload["Existing public upload-request journey"]
+    F4_keep_confirm["Confirm independent copy size, allowance and provenance"]
+    F4_reserving{{"Recheck recipient eligibility and reserve allowance once"}}
+    F4_allowance["Insufficient storage for this independent copy"]
+    F4_copying["Copying privately into My files"]
+    F4_committing{{"Recheck current source access and commit the independent copy"}}
+    F4_keep_retry["Explain keeping failure or uncertain result"]
+    F4_cleaning["Safely remove unfinished copy storage"]
+    F4_kept["Independent file kept in My files"]
+    F4_unavailable["Unavailable source or account access with recovery"]
+    F4_stopped["Keeping stopped after safe cleanup"]
+    F4_left(["Leave the incoming journey"])
+    F4_entry -->|"F4.T1: Save to my account"| F4_landing
+    F4_entry -->|"F4.T2: Open saved Incoming item"| F4_reading
+    F4_entry -->|"F4.T3: Leave"| F4_left
+    F4_landing -->|"F4.T4: Landing resolves [The canonical public recipient URL is valid, the person is already signed in, and the one-tab intent was stored successfully.]"| F4_reviewing
+    F4_landing -->|"F4.T5: Landing resolves [The canonical public recipient URL is valid, the person is signed out, and the one-tab intent was stored successfully.]"| F4_signin
+    F4_landing -->|"F4.T6: Landing resolves [The canonical public recipient URL is valid but tab storage is blocked or fails.]"| F4_fallback
+    F4_landing -->|"F4.T7: Landing resolves"| F4_fallback
+    F4_signin -->|"F4.T8: Sign-in returns [The current account is signed in, there is no saved-row return destination, and this tab has a valid unexpired intent.]"| F4_reviewing
+    F4_signin -->|"F4.T9: Sign-in returns [The current account is signed in, there is no saved-row return destination, and the intent is missing, expired or unreadable.]"| F4_fallback
+    F4_signin -->|"F4.T10: Sign-in returns"| F4_signin
+    F4_signin -->|"F4.T11: Cancel or leave"| F4_left
+    F4_fallback -->|"F4.T12: Continue sign-in [The person is signed out.]"| F4_signin
+    F4_fallback -->|"F4.T13: Continue sign-in"| F4_fallback
+    F4_fallback -->|"F4.T14: Paste public link [The person is signed in and the pasted URL is a valid canonical public recipient URL.]"| F4_reviewing
+    F4_fallback -->|"F4.T15: Paste public link"| F4_fallback
+    F4_fallback -->|"F4.T16: Cancel or leave"| F4_left
+    F4_reviewing -->|"F4.T17: Review resolves [The current account is signed in and this intent remains valid with live original recipient access.]"| F4_confirm
+    F4_reviewing -->|"F4.T18: Review resolves [The current account is signed in but the intent is missing or expired.]"| F4_fallback
+    F4_reviewing -->|"F4.T19: Review resolves [The person is signed out.]"| F4_signin
+    F4_reviewing -->|"F4.T20: Review resolves"| F4_unavailable
+    F4_confirm -->|"F4.T21: Save [The person explicitly chooses Save for the current displayed account and the intent remains valid.]"| F4_saving
+    F4_confirm -->|"F4.T22: Save"| F4_reviewing
+    F4_confirm -->|"F4.T23: Change account"| F4_signin
+    F4_confirm -->|"F4.T24: Source availability changes"| F4_unavailable
+    F4_confirm -->|"F4.T25: Back or cancel"| F4_left
+    F4_saving -->|"F4.T26: Save resolves [The same account retains authority and this action committed its reference or finds that account existing reference.]"| F4_reading
+    F4_saving -->|"F4.T27: Save resolves [No reference committed and source access ended, or the submitting account no longer has authority.]"| F4_unavailable
+    F4_saving -->|"F4.T28: Save resolves"| F4_save_retry
+    F4_save_retry -->|"F4.T29: Retry [The same account has authority and the original intent remains valid.]"| F4_saving
+    F4_save_retry -->|"F4.T30: Retry"| F4_reviewing
+    F4_save_retry -->|"F4.T31: Back or cancel"| F4_left
+    F4_reading -->|"F4.T32: Saved detail resolves [The current account owns the saved row and its original link remains available.]"| F4_incoming
+    F4_reading -->|"F4.T33: Saved detail resolves [The current account owns the saved row but original access is expired, revoked, deleted or unavailable.]"| F4_unavailable
+    F4_reading -->|"F4.T34: Saved detail resolves"| F4_unavailable
+    F4_incoming -->|"F4.T35: Open or download send file [The reference is a send and current recipient access permits that file read.]"| F4_reading
+    F4_incoming -->|"F4.T36: Open or download send file"| F4_unavailable
+    F4_incoming -->|"F4.T37: Supply files [The reference is an upload request and its existing public upload rules still permit supplying files.]"| F4_upload
+    F4_incoming -->|"F4.T38: Supply files"| F4_unavailable
+    F4_upload -->|"F4.T39: Return to Incoming"| F4_reading
+    F4_upload -->|"F4.T40: Leave"| F4_left
+    F4_incoming -->|"F4.T41: Keep in My files [The same account already has an authoritative available independent copy for this source file.]"| F4_kept
+    F4_incoming -->|"F4.T42: Keep in My files [No available independent copy exists, the saved reference is a newer account-backed durable send, and the source supports authoritative commit-time checks with current recipient download access, retained bytes and a clean or truthfully too-large scan.]"| F4_keep_confirm
+    F4_incoming -->|"F4.T43: Keep in My files"| F4_unavailable
+    F4_incoming -->|"F4.T44: Original access ends"| F4_unavailable
+    F4_incoming -->|"F4.T45: Account changes or session ends"| F4_unavailable
+    F4_incoming -->|"F4.T46: Leave"| F4_left
+    F4_keep_confirm -->|"F4.T47: Confirm keep"| F4_reserving
+    F4_keep_confirm -->|"F4.T48: Back or cancel"| F4_reading
+    F4_reserving -->|"F4.T49: Reservation resolves [The original account still has authority and this keeping action already committed an available independent copy.]"| F4_kept
+    F4_reserving -->|"F4.T50: Reservation resolves [This action is uncommitted and uncancelled, current account and authoritative durable source access remain eligible, and the atomic reservation succeeds within allowance or returns this action existing reservation.]"| F4_copying
+    F4_reserving -->|"F4.T51: Reservation resolves [This action is uncommitted and uncancelled, current account and durable source remain eligible, and no reservation exists for this action but its size would exceed allowance.]"| F4_allowance
+    F4_reserving -->|"F4.T52: Reservation resolves [This action has not committed and has unfinished storage or a reservation; either it was cancelled or account/source eligibility ended.]"| F4_cleaning
+    F4_reserving -->|"F4.T53: Reservation resolves [This action has not committed and no unfinished copy or reservation needs cleanup; either it was cancelled or account access or source eligibility ended.]"| F4_unavailable
+    F4_reserving -->|"F4.T54: Reservation resolves"| F4_keep_retry
+    F4_allowance -->|"F4.T55: Retry after freeing storage"| F4_reserving
+    F4_allowance -->|"F4.T56: Back or cancel"| F4_reading
+    F4_copying -->|"F4.T57: Copy finishes"| F4_committing
+    F4_copying -->|"F4.T58: Copy fails [Account and authoritative source access remain eligible and the failure is recoverable.]"| F4_keep_retry
+    F4_copying -->|"F4.T59: Copy fails"| F4_cleaning
+    F4_copying -->|"F4.T60: Account or source access ends"| F4_cleaning
+    F4_copying -->|"F4.T61: Cancel keeping"| F4_cleaning
+    F4_copying -->|"F4.T62: Leave"| F4_left
+    F4_committing -->|"F4.T63: Keeping resolves [The same account retains authority and this action already committed an available independent copy, or this action is uncommitted and uncancelled, the same account retains authority, and authoritative source access, identity, retention and accepted scan still permit a complete independent copy.]"| F4_kept
+    F4_committing -->|"F4.T64: Keeping resolves [This action already committed but current account authority ended.]"| F4_unavailable
+    F4_committing -->|"F4.T65: Keeping resolves [This action has not committed and either it was cancelled or account/source/retention/identity/scan eligibility ended.]"| F4_cleaning
+    F4_committing -->|"F4.T66: Keeping resolves"| F4_keep_retry
+    F4_keep_retry -->|"F4.T67: Retry"| F4_reserving
+    F4_keep_retry -->|"F4.T68: Cancel keeping"| F4_cleaning
+    F4_keep_retry -->|"F4.T69: Leave"| F4_left
+    F4_cleaning -->|"F4.T70: Cleanup resolves [Reconciliation finds this action committed an available independent copy before cancellation and the same account still has authority.]"| F4_kept
+    F4_cleaning -->|"F4.T71: Cleanup resolves [Reconciliation finds this action committed before cancellation but current account authority ended.]"| F4_unavailable
+    F4_cleaning -->|"F4.T72: Cleanup resolves [No copy committed and all unfinished objects are confirmed absent after all possible outstanding writes.]"| F4_stopped
+    F4_cleaning -->|"F4.T73: Cleanup resolves"| F4_cleaning
+    F4_cleaning -->|"F4.T74: Leave"| F4_left
+    F4_kept -->|"F4.T75: Open kept file [The same account retains authority and the independent copy remains available.]"| F4_kept
+    F4_kept -->|"F4.T76: Open kept file"| F4_unavailable
+    F4_kept -->|"F4.T77: Return to Incoming"| F4_reading
+    F4_kept -->|"F4.T78: Leave"| F4_left
+    F4_stopped -->|"F4.T79: Return to Incoming"| F4_reading
+    F4_stopped -->|"F4.T80: Leave"| F4_left
+    F4_unavailable -->|"F4.T81: Refresh [There is a saved-row ID to reread for the current account.]"| F4_reading
+    F4_unavailable -->|"F4.T82: Refresh"| F4_reviewing
+    F4_unavailable -->|"F4.T83: Paste another public link"| F4_fallback
+    F4_unavailable -->|"F4.T84: Cancel or leave"| F4_left
+    F4_unavailable -->|"F4.T85: Open kept file [The current account owns the saved reference and its authoritative association identifies an available independent copy.]"| F4_kept
+    F4_unavailable -->|"F4.T86: Open kept file"| F4_unavailable
+    F4_unavailable -->|"F4.T87: Sign in"| F4_signin
+    F4_signin -->|"F4.T88: Sign-in returns [The current account is signed in and there is a saved-row return destination.]"| F4_reading
+    F4_reserving -->|"F4.T89: Reservation resolves [This action already committed but its private copy is no longer available to the current account.]"| F4_unavailable
+    F4_committing -->|"F4.T90: Keeping resolves [This action already committed, the same account retains authority, and its copy is no longer available.]"| F4_unavailable
+    F4_cleaning -->|"F4.T91: Cleanup resolves [Reconciliation finds this action committed before cancellation, the same account retains authority, and its copy is no longer available.]"| F4_unavailable
+  end

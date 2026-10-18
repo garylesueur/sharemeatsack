@@ -4,7 +4,7 @@ export function manageMarkdown(view: AgentTransferView): string {
   const lines = [
     `# ${view.title}`,
     "",
-    "Private owner summary for sharemeatsack.com. Do not give this link to the person uploading.",
+    "Private owner summary for share.imeatsack.com. Do not give this link to the person uploading.",
     "",
     `- Status: \`${view.status}\``,
     `- Expires: ${view.expiresAt}`,

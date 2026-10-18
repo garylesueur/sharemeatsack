@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { SHAREMEATSACK_SKILL_MARKDOWN } from "./sharemeatsack-skill";
-import { PRODUCT_NAME, PRODUCT_ORIGIN } from "./product";
+import { PRODUCT_NAME } from "./product";
 
 const root = process.cwd();
 
@@ -20,8 +20,8 @@ describe("Agent Plugin package", () => {
       author: { name: string; url: string };
     };
     expect(manifest.$schema).toBe("https://agent-plugins.org/schemas/1.0.0/plugin.schema.json");
-    expect(manifest.name).toBe(PRODUCT_NAME);
-    expect(manifest.homepage).toBe(PRODUCT_ORIGIN);
+    expect(manifest.name).toBe("sharemeatsack");
+    expect(manifest.homepage).toBe("https://share.imeatsack.com");
     expect(manifest.author).toEqual({
       name: "Gary Le Sueur",
       url: "https://gaz.dev",
@@ -56,7 +56,7 @@ describe("Agent Plugin package", () => {
     };
     expect(mcp.mcpServers[PRODUCT_NAME]).toEqual({
       type: "streamable-http",
-      url: `${PRODUCT_ORIGIN}/mcp`,
+      url: "https://share.imeatsack.com/mcp",
     });
   });
 

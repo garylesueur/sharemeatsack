@@ -68,3 +68,8 @@ export const sendCreateSchema = z.object({
 });
 
 export type SendCreateInput = z.infer<typeof sendCreateSchema>;
+
+export const mergeTransfersSchema = z.object({
+  secondaryTransferId: z.string().min(1),
+  secondaryAgentToken: z.string().min(1),
+});

@@ -1,12 +1,12 @@
 {
-  "name": "sharemeatsack.com",
-  "displayName": "sharemeatsack.com",
-  "version": "0.1.0",
+  "name": "sharemeatsack",
+  "displayName": "share.imeatsack.com",
+  "version": "0.1.2",
   "description": "An agent shares files with a person, or gets files from a person. Create a request or a send, paste the link, and wait. No API key.",
   "author": {
     "name": "Gary Le Sueur"
   },
-  "homepage": "https://sharemeatsack.com",
+  "homepage": "https://share.imeatsack.com",
   "repository": "https://github.com/garylesueur/sharemeatsack",
   "license": "MIT",
   "keywords": [
@@ -16,5 +16,6 @@
     "file-transfer"
   ],
   "skills": "./skills/",
-  "mcpServers": "./mcp.json"
+  "mcpServers": "./mcp.json",
+  "logo": "public/plugin-icon.png"
 }

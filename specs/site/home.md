@@ -6,7 +6,7 @@ status: implemented
 
 # The home page
 
-What a person sees when they arrive at sharemeatsack.com without knowing what it is. Its job is to explain the product, prove it, and get an agent connected.
+What a person sees when they arrive at share.imeatsack.com without knowing what it is. Its job is to explain the product, prove it, and get an agent connected.
 
 ## Behaviours
 
@@ -26,9 +26,16 @@ A person can add the MCP server to their client without copying anything, wherev
 
 The home page, the MCP guide, and the skill are public. Opening a transfer link still needs the unguessable URL; those pages are not listed here.
 
+### B5 — Signing in reaches the shared account 🟢 implemented
+
+Sign in on the home page, install page and transfer navigation opens lanyard
+at meatsack.puregaz.com. A returning signed-in visitor reaches the same account
+used by ask.imeatsack.com and show.imeatsack.com, with a link back to share.imeatsack.com.
+Someone opening an upload or download link can continue without signing in.
+
 ## Rules (Invariants)
 
-- The product is always called **sharemeatsack.com** on this page.
+- The product is always called **share.imeatsack.com** on this page.
 - Transfer links are not listed on the home page and are not for search.
 
 ## Decision Tables
@@ -41,13 +48,18 @@ _None._
 
 ## Open Questions
 
-- Brand themes matching askmeatsack.com. **Settled:** the home uses the shared meatsack-brand shell (wordmark, sibling pill, hero, seam, steps, use cases, curl) with the iron accent. The hero is the character-guide plate scene.
+- Brand themes matching ask.imeatsack.com. **Settled:** the home uses the shared meatsack-brand shell (wordmark, sibling pill, hero, seam, steps, use cases, curl) with the iron accent. The hero is the character-guide plate scene.
 
 ## Future Considerations
 
+- When the [Share workspace](../transfers/accounts/workspace.md) ships, the existing
+  central sign-in entry opens My files at https://meatsack.puregaz.com. The same portal
+  session and picker reach Ask and Show; public upload/download links remain usable
+  without entering the portal.
 - A playground transfer that does not need an agent.
 
 ## Out of Scope
 
-- A dashboard of the visitor’s transfers. That is a later Meatsack portal, after lanyard.
+- Transfer management on this public home page. It belongs in the shared portal
+  at https://meatsack.puregaz.com, using lanyard's existing identity.
 - FileSnare marketing, pricing tables, or a contacts demo.

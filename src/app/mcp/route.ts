@@ -1,3 +1,5 @@
+import { AsyncLocalStorage } from "node:async_hooks";
+import { verifyAccountRequest, accountUnauthorized } from "@/lib/account-api";
 import { createMcpHandler } from "mcp-handler";
 import {
   htmlDocumentResponse,
@@ -22,14 +24,19 @@ import {
 // inside this limit rather than being killed on the wire.
 export const maxDuration = 60;
 
+const accountContext = new AsyncLocalStorage<{ account?: string }>();
+
 const mcpHandler = createMcpHandler(
   (server) => {
     server.tool(
       SHAREMEATSACK_TOOL_NAME,
-      `${PRODUCT_SENTENCE} Create a request or a send, read status, wait a bounded time, cancel, or list files. Same as the sharemeatsack.com HTTP API. This service does not send mail.`,
+      `${PRODUCT_SENTENCE} Create a request or a send, read status, wait a bounded time, cancel, list files, or merge a secondary transfer into a primary using both private agent tokens. Same as the share.imeatsack.com HTTP API. This service does not send mail.`,
       sharemeatsackToolInputShape,
       async (args) => {
-        const tool = createSharemeatsackTool(getDefaultTransferService());
+        const tool = createSharemeatsackTool(
+          getDefaultTransferService(),
+          accountContext.getStore()?.account,
+        );
         const result = await tool.invoke(args);
         const text = JSON.stringify(
           isSharemeatsackToolError(result) ? apiErrorBody(result) : result,
@@ -76,8 +83,17 @@ function withMcpCors(response: Response): Response {
   });
 }
 
+async function handleAuthorizedMcp(request: Request): Promise<Response> {
+  const authority = await verifyAccountRequest(request);
+  if (authority.outcome === "refused") return withMcpCors(accountUnauthorized());
+  return accountContext.run(
+    { account: authority.outcome === "accepted" ? authority.account : undefined },
+    async () => withMcpCors(await mcpHandler(request)),
+  );
+}
+
 export async function POST(request: Request): Promise<Response> {
-  return withMcpCors(await mcpHandler(request));
+  return handleAuthorizedMcp(request);
 }
 
 export async function GET(request: Request): Promise<Response> {
@@ -88,11 +104,11 @@ export async function GET(request: Request): Promise<Response> {
   if (kind === "html") {
     return htmlDocumentResponse(mcpGuideHtml());
   }
-  return withMcpCors(await mcpHandler(request));
+  return handleAuthorizedMcp(request);
 }
 
 export async function DELETE(request: Request): Promise<Response> {
-  return withMcpCors(await mcpHandler(request));
+  return handleAuthorizedMcp(request);
 }
 
 export async function OPTIONS(): Promise<Response> {

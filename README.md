@@ -1,4 +1,4 @@
-# sharemeatsack.com
+# share.imeatsack.com
 
 **An agent shares files with a person, or gets files from a person.**
 
@@ -8,8 +8,8 @@ API key. Create is open today.
 
 Posting the link to Slack, email, or anywhere else is the calling agent's job.
 
-Sibling projects: [askmeatsack.com](https://github.com/garylesueur/askmeatsack) —
-an agent asks, a person answers. [showmeatsack.com](https://github.com/garylesueur/showmeatsack) —
+Sibling projects: [ask.imeatsack.com](https://github.com/garylesueur/askmeatsack) —
+an agent asks, a person answers. [show.imeatsack.com](https://github.com/garylesueur/showmeatsack) —
 an agent posts a page, a person opens it.
 
 An agent creates a request or a send. A person opens the page and uploads or
@@ -46,10 +46,65 @@ are the merge gates — see `.engineering/config.yaml`.
 
 ## Secrets
 
-Three 1Password items live in the **Agents** vault: `sharemeatsack.com
-Development`, `sharemeatsack.com Preview`, and `sharemeatsack.com Production`.
+Three 1Password items live in the **Agents** vault: `share.imeatsack.com
+Development`, `share.imeatsack.com Preview`, and `share.imeatsack.com Production`.
 Same field names, different values. Local work uses Development only.
+
+`pnpm env` and `pnpm dev:op` use the read-only `meatsack` profile through
+`~/.local/bin/op-agent`. Its service-account token stays in macOS Keychain;
+normal credential reads do not invoke desktop authorization. The existing items
+stay in the Agents vault. Real storage/scanner acceptance requires filled
+Development R2 and cleanroom fields; blank fields do not establish a working service.
 
 `.env.development.tpl`, `.env.preview.tpl`, and `.env.production.tpl` hold
 `op://` references only. `.env.example` is the empty placeholder. Never print
 `.env` contents and never commit secrets.
+
+For local testing with the real scanner, `CLEANROOM_CALLBACK_BASE_URL` can provide
+a temporary HTTPS origin for the two signed scan-result callbacks. Leave it unset
+to use `PUBLIC_BASE_URL`. It must be a bare HTTPS origin and does not change public
+transfer links, storage URLs or cleanup destinations. Set temporary return addresses
+in the development process and remove them after testing.
+
+## Plugin marketplace
+
+The plugin ID is `sharemeatsack`; its display name and MCP tool name are
+**share.imeatsack.com**. The portable manifest includes OpenAI listing metadata and
+icons; `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json` provide
+client compatibility.
+
+The [Meatsack marketplace](https://github.com/garylesueur/meatsack-marketplace)
+packages all three products. It contains generated, minimal plugin copies;
+this repository remains the source for this product's manifest, skill, MCP
+connection, and logo. Run the marketplace sync after changing those files.
+
+Codex:
+
+```sh
+codex plugin marketplace add garylesueur/meatsack-marketplace
+```
+
+Then install **share.imeatsack.com** from the Meatsack source in Plugins.
+
+Claude Code:
+
+```text
+/plugin marketplace add garylesueur/meatsack-marketplace
+/plugin install sharemeatsack@meatsack
+```
+
+Cursor Teams/Enterprise: Dashboard → Plugins & MCPs → Add Marketplace →
+Import from Repo, using the marketplace repository URL. Install the product
+from Customize. For a personal account, copy the plugin package into `~/.cursor/plugins/local/`.
+See the [installation guide](https://share.imeatsack.com/install) for commands.
+
+Marketplace publication must precede deploying these website install links.
+Public ChatGPT/Codex and Cursor directory listings require separate submissions.
+
+### Site icons
+
+The browser favicon and Apple touch icon use the same character artwork as the
+plugin listing. Edit `public/plugin-icon.png`, then run `pnpm sync:icons` to
+regenerate `src/app/favicon.ico`, `src/app/icon.png`, and
+`src/app/apple-icon.png`. Do not edit those exports by hand. Builds regenerate
+them, and tests check that they match the source.

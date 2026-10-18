@@ -1,26 +1,29 @@
 ---
 name: sharemeatsack
 description: >
-  Puts files on a sharemeatsack.com page, or gets files from a person. Confirm
+  Puts files on a share.imeatsack.com page, or gets files from a person. Confirm
   who they are when someone will open the link. Create a request or a send,
   paste the page link, and wait. Use when you need invoices, photos, PDFs, or
   any files from someone, or when you need to put files on meatsack or give
   them to someone. Do not mail the files yourself and do not pull large files
-  into the conversation.
+  into the conversation. Also use to merge existing share links with both
+  private management tokens.
 ---
 
-# sharemeatsack.com
+# share.imeatsack.com
 
 Create a request or a send, put the human link where they will see it, then wait. Do not invent another file host, a gist, or an email attachment.
 
-The product is **sharemeatsack.com**. The tool is named `sharemeatsack.com`. HTTP and the tool are the same transfer. Human links look like `https://sharemeatsack.com/s/…`.
+The product is **share.imeatsack.com**. The tool is named `share.imeatsack.com`. HTTP and the tool are the same transfer. Human links look like `https://share.imeatsack.com/s/…`.
+
+Product homepage and HTTP API: `https://share.imeatsack.com`. Connect MCP at `https://share.imeatsack.com/mcp`.
 
 There is no API key. Create is open today. The person who opens the link never signs in. After create, keep `pollUrl` (or its `token`) and `manageUrl` for status, wait, cancel, and inspect.
 
 ## Get files from a person
 
 1. Confirm who they are, and that you already know how to reach them — this chat, Slack, mail. Do not create a request for a guessed address. This product has no contacts book.
-2. Call `sharemeatsack.com` with action `request` (or `POST /api/v1/transfers` with `"action": "request"`). Send a title, optional message, optional expiry, optional caps (`maxFiles`, `maxFileSize`, `allowedTypes`), optional metadata, and optional `callbackUrl`.
+2. Call `share.imeatsack.com` with action `request` (or `POST /api/v1/transfers` with `"action": "request"`). Send a title, optional message, optional expiry, optional caps (`maxFiles`, `maxFileSize`, `allowedTypes`), optional metadata, and optional `callbackUrl`.
 3. You always get `uploadUrl`, `pollUrl`, and `manageUrl` immediately. Paste **`uploadUrl` into this conversation** so they can open it. Keep `manageUrl` for yourself. Do not put `manageUrl` or the agent token on the upload page.
 4. Wait with action `wait` (pass `transferId` and `agentToken` from `pollUrl`). One call sits for up to 50 seconds. If it is still open the reply says `timedOut: true` and `nextAction: "wait"`: **call `wait` again, and keep calling.** Someone taking ten minutes or two hours is the normal case.
 5. When status is `complete`, read the file list (`status`, `wait`, or action `files`). You get names, sizes, types, scan status, and short-lived download URLs. You never get file bytes. Do not fetch a large file into the conversation.
@@ -30,7 +33,7 @@ There is no API key. Create is open today. The person who opens the link never s
 “Put them on meatsack” and “send them to Simon” are the same send. The files go on a page. Simon, if anyone, just gets that page’s link.
 
 1. If they named a person, confirm who they are and that you already know how to reach them. If they only asked to put the files on meatsack, skip that.
-2. Call `sharemeatsack.com` with action `send` (or `POST /api/v1/transfers` with `"action": "send"`). Send a title, optional message, optional expiry, and `files` as `{ name, type, size }[]` — never bytes.
+2. Call `share.imeatsack.com` with action `send` (or `POST /api/v1/transfers` with `"action": "send"`). Send a title, optional message, optional expiry, and `files` as `{ name, type, size }[]` — never bytes.
 3. You get one short-lived upload URL per file, plus `downloadUrl`, `pollUrl`, and `manageUrl`. **PUT the bytes at those upload URLs yourself.** Refresh a URL if it is close to expiry. The download link does not serve files until every offered file has arrived.
 4. Wait until status is `ready`, then paste **`downloadUrl`.** If they named a person, put it where that person will see it. If they only said put them on meatsack, paste it in this conversation. Do not paste it before the files have landed. Delivery is your job. This service does not send mail.
 5. Each file on the page is its own download. There is no zip of everything.
@@ -39,9 +42,19 @@ There is no API key. Create is open today. The person who opens the link never s
 
 Giving `uploadUrl` or `downloadUrl` to them is **your** job. They get the same page link you would paste here. This service does not send mail and does not post to other chats. Then wait the same way as above.
 
+## Merge existing share links
+
+1. Identify the primary link to keep and each secondary link to empty. You need the private agent token from each transfer's `manageUrl` or `pollUrl`; human links alone cannot authorise a merge. Keep all private tokens out of public messages.
+2. Check `status` for both transfers. Both must be unexpired and sealed (`complete` for a request, `ready` for a send), with uploads and scans finished. Wait if either is still uploading or scanning.
+3. Call `share.imeatsack.com` with action `merge`, `transferId` and `agentToken` for the **primary**, plus `secondaryTransferId` and `secondaryAgentToken` for the **secondary**. Over HTTP, use `POST /api/v1/transfers/{primaryTransferId}/merge`, a primary `Authorization: Bearer ...` header, and JSON `{ "secondaryTransferId": "...", "secondaryAgentToken": "..." }`.
+4. The result includes `movedFileCount`, `totalFileCount`, `secondaryFileCount: 0`, the primary `downloadUrl`, and its `expiresAt`. Files move together; nothing is copied through the agent. Repeat for additional secondary links using the same primary. Duplicate filenames remain separate files. The primary's kind, links, settings, limits, and expiry stay the same; a request remains private to its agent for file access.
+5. Refresh status and retry on `merge_conflict`. Repeating a successful merge from an empty secondary moves zero files. If the combined files exceed the primary's limits, neither transfer changes. Scan verdicts stay attached and blocked files stay blocked.
+
+The secondary stays sealed and empty with its existing expiry. There is no immediate deletion operation or empty-share cleanup job. Production Redis records age out after the existing expiry/read window; automatic object deletion is still future work. Already issued storage URLs remain valid until their own expiry.
+
 ## Do not
 
-- Name extra tools. There is one tool, `sharemeatsack.com`, with actions `request`, `send`, `status`, `wait`, `cancel`, and `files`.
+- Name extra tools. There is one tool, `share.imeatsack.com`, with actions `request`, `send`, `status`, `wait`, `cancel`, `files`, and `merge`.
 - Put the agent status secret or `manageUrl` on the human page or anywhere the person should not see it.
 - Treat Slack or email posting as a feature of this product.
 - Pull a large file into the chat, or attach the files to mail yourself.

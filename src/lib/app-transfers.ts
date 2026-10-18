@@ -11,6 +11,8 @@ import {
   type TransferStore,
 } from "./transfer-store";
 import { createUpstashKvFromEnv } from "./upstash-kv";
+import { createOwnedTransferMetadata } from "./owned-transfer-metadata";
+import { createOwnedTransferStore } from "./owned-transfer-store";
 import {
   createTransferService,
   defaultTransferServiceDeps,
@@ -19,18 +21,27 @@ import {
 
 const globalForTransfers = globalThis as typeof globalThis & {
   sharemeatsackStore?: TransferStore;
+  sharemeatsackOwnedStore?: boolean;
+  sharemeatsackTestStore?: boolean;
   sharemeatsackObjectStore?: ObjectStore | null;
   sharemeatsackCleanroom?: Cleanroom | null;
 };
 
 export function getDefaultStore(): TransferStore {
-  if (globalForTransfers.sharemeatsackStore) {
+  if (
+    globalForTransfers.sharemeatsackStore &&
+    (globalForTransfers.sharemeatsackOwnedStore || globalForTransfers.sharemeatsackTestStore)
+  ) {
     return globalForTransfers.sharemeatsackStore;
   }
   const kv = createUpstashKvFromEnv();
-  globalForTransfers.sharemeatsackStore = kv
-    ? createRedisTransferStore(kv)
-    : createMemoryTransferStore();
+  globalForTransfers.sharemeatsackStore = createOwnedTransferStore({
+    legacy:
+      globalForTransfers.sharemeatsackStore ??
+      (kv ? createRedisTransferStore(kv) : createMemoryTransferStore()),
+    metadata: createOwnedTransferMetadata(),
+  });
+  globalForTransfers.sharemeatsackOwnedStore = true;
   return globalForTransfers.sharemeatsackStore;
 }
 
@@ -70,12 +81,19 @@ export function getDefaultCleanroom(): Cleanroom | null {
 
 export function getDefaultTransferService() {
   return createTransferService(
-    defaultTransferServiceDeps(getDefaultStore(), getDefaultObjectStore(), getDefaultCleanroom()),
+    defaultTransferServiceDeps(
+      getDefaultStore(),
+      getDefaultObjectStore(),
+      getDefaultCleanroom(),
+      createOwnedTransferMetadata(),
+    ),
   );
 }
 
 export function installTestTransferStore(store: TransferStore): void {
   globalForTransfers.sharemeatsackStore = store;
+  globalForTransfers.sharemeatsackTestStore = true;
+  globalForTransfers.sharemeatsackOwnedStore = false;
 }
 
 export function installTestObjectStore(store: ObjectStore | null): void {

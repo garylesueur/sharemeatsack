@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { SITE_TAGLINE, SITE_TITLE } from "@/lib/mcp-docs";
 
-export const alt = `${SITE_TITLE} — ${SITE_TAGLINE}`;
+export const alt = `I, Meatsack · Share — ${SITE_TAGLINE}`;
 export const size = {
   width: 1200,
   height: 630,
@@ -22,7 +22,10 @@ export default function Image() {
         color: "#eef1f4",
       }}
     >
-      <div style={{ display: "flex", fontSize: 28, color: "#9aa3b2" }}>{SITE_TITLE}</div>
+      <div style={{ display: "flex", fontSize: 28, color: "#9aa3b2" }}>I, Meatsack · Share</div>
+      <div style={{ display: "flex", marginTop: 12, fontSize: 24, color: "#9aa3b2" }}>
+        {SITE_TITLE}
+      </div>
       <div
         style={{
           display: "flex",

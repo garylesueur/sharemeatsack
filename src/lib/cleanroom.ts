@@ -204,7 +204,7 @@ export function createHttpCleanroom(
         return null;
       }
       if (!response.ok) {
-        return null;
+        throw new Error(`cleanroom could not answer the poll (${response.status})`);
       }
       return unwrapScan(await response.json());
     },
