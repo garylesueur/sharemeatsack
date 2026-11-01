@@ -146,6 +146,16 @@ describe("a lanyard token on create", () => {
     });
   });
 
+  it("treats a reused transfer token on create as anonymous, without asking lanyard", async () => {
+    const first = await create(aSend);
+    const { transferId } = (await first.json()) as { transferId: string };
+    const agentToken = (await store.getById(transferId))!.agentToken;
+
+    const response = await create(aRequest, `Bearer ${agentToken}`);
+    expect(response.status).toBe(201);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("refuses a token lanyard rejects and creates nothing", async () => {
     lanyardSays(401);
     const response = await create(aRequest, "Bearer revoked");
