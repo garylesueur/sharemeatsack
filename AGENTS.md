@@ -43,7 +43,7 @@ Always call the product **share.imeatsack.com** in user-facing copy. The agent t
 - Bytes never go through the tool, the chat, or this service’s compute.
 - One batch seals a request. No zip-of-everything.
 - Scan via cleanroom. Infected files are blocked. Files over 500 MiB are offered and flagged.
-- Lanyard later. FileSnare’s dashboard does not come with us.
+- Lanyard is the only sign-in. With `LANYARD_URL` set, an optional lanyard Bearer token on create is verified and recorded; nothing else touches lanyard. FileSnare’s dashboard does not come with us.
 
 ## Repository operations
 

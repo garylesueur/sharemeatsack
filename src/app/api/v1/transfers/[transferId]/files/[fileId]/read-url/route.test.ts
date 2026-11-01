@@ -94,6 +94,29 @@ describe("Viewing B8/B9 — HTTP read renewal", () => {
     expect(refused.headers.get("cache-control")).toBe("private, no-store");
   });
 
+  it("reads with the transfer's Bearer capability while lanyard is configured but down", async () => {
+    const context = await fixture();
+    vi.stubEnv("LANYARD_URL", "https://lanyard.test");
+    const lanyard = vi.fn(async () => {
+      throw new TypeError("fetch failed");
+    });
+    vi.stubGlobal("fetch", lanyard);
+    try {
+      const response = await POST(
+        new Request(url, {
+          method: "POST",
+          headers: { Authorization: "Bearer public" },
+          body: JSON.stringify({ purpose: "download" }),
+        }),
+        context,
+      );
+      expect(response.status).toBe(200);
+      expect(lanyard).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("refuses malformed purposes at the HTTP boundary without issuing access", async () => {
     const context = await fixture();
     await Promise.all(

@@ -43,6 +43,9 @@ export type TransferServiceError = {
   issues?: { path: string; message: string }[];
 };
 
+/** Who made a transfer. Empty for an anonymous create. Never used for access. */
+export type TransferCreator = { account?: string };
+
 export type CreateRequestResult = {
   transferId: string;
   kind: "request";
@@ -768,7 +771,10 @@ export function createTransferService(deps: TransferServiceDeps) {
   }
 
   return {
-    async createRequest(body: unknown): Promise<CreateRequestResult | TransferServiceError> {
+    async createRequest(
+      body: unknown,
+      creator: TransferCreator = {},
+    ): Promise<CreateRequestResult | TransferServiceError> {
       if (body && typeof body === "object" && "action" in body) {
         const action = (body as { action?: unknown }).action;
         if (action !== undefined && action !== "request") {
@@ -803,6 +809,7 @@ export function createTransferService(deps: TransferServiceDeps) {
         maxFiles: input.maxFiles,
         maxFileSize: input.maxFileSize,
         allowedTypes: input.allowedTypes,
+        ...(creator.account ? { account: creator.account } : {}),
       };
       await deps.store.save(transfer);
       const urls = urlsFor(transfer);
@@ -818,7 +825,10 @@ export function createTransferService(deps: TransferServiceDeps) {
       };
     },
 
-    async createSend(body: unknown): Promise<CreateSendResult | TransferServiceError> {
+    async createSend(
+      body: unknown,
+      creator: TransferCreator = {},
+    ): Promise<CreateSendResult | TransferServiceError> {
       if (body && typeof body === "object" && "action" in body) {
         const action = (body as { action?: unknown }).action;
         if (action !== undefined && action !== "send") {
@@ -891,6 +901,7 @@ export function createTransferService(deps: TransferServiceDeps) {
         metadata: parsed.data.metadata,
         callbackUrl: parsed.data.callbackUrl,
         files,
+        ...(creator.account ? { account: creator.account } : {}),
       };
       await deps.store.save(transfer);
       const urls = urlsFor(transfer);
@@ -908,15 +919,16 @@ export function createTransferService(deps: TransferServiceDeps) {
 
     async create(
       body: unknown,
+      creator: TransferCreator = {},
     ): Promise<CreateRequestResult | CreateSendResult | TransferServiceError> {
       const action =
         body && typeof body === "object" && "action" in body
           ? (body as { action?: unknown }).action
           : "request";
       if (action === "send") {
-        return await this.createSend(body);
+        return await this.createSend(body, creator);
       }
-      return await this.createRequest(body);
+      return await this.createRequest(body, creator);
     },
 
     loadForPublic,

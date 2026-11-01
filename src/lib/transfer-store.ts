@@ -33,6 +33,8 @@ export type Transfer = {
   maxFileSize?: number;
   allowedTypes?: string[];
   files?: TransferFile[];
+  /** The lanyard account that created it, when the creator signed in. A record, not a key. */
+  account?: string;
 };
 
 export type ScanPointer = {

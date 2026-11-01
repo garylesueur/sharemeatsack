@@ -13,3 +13,5 @@ R2_PUBLIC_BASE_URL=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/wsx7fzegvrckenlg
 CLEANROOM_URL=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/wsx7fzegvrckenlgc4ov7zt25m/CLEANROOM_URL
 CLEANROOM_SERVICE_CREDENTIAL=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/wsx7fzegvrckenlgc4ov7zt25m/CLEANROOM_SERVICE_CREDENTIAL
 CLEANROOM_WEBHOOK_SECRET=op://${OP_VAULT:-mep374l3cpdtzwibf5fswsimbi}/wsx7fzegvrckenlgc4ov7zt25m/CLEANROOM_WEBHOOK_SECRET
+# Lanyard sign-in origin. Not a secret. Empty keeps sign-in off: no Sign in link, Bearer on create ignored.
+LANYARD_URL=
