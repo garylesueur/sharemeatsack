@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { createMcpHandler } from "mcp-handler";
 import {
   htmlDocumentResponse,
@@ -8,6 +9,7 @@ import {
 } from "@/lib/mcp-docs";
 import { getDefaultTransferService, apiErrorBody } from "@/lib/app-transfers";
 import { SHAREMEATSACK_SKILL_MARKDOWN } from "@/lib/sharemeatsack-skill";
+import { identifyCaller } from "@/lib/lanyard";
 import { PRODUCT_NAME, PRODUCT_SENTENCE } from "@/lib/product";
 import {
   SHAREMEATSACK_TOOL_NAME,
@@ -22,6 +24,10 @@ import {
 // inside this limit rather than being killed on the wire.
 export const maxDuration = 60;
 
+// The Authorization header of the MCP request being handled, so a create can
+// be attributed to a lanyard account. Read only when the tool creates.
+const requestAuthorization = new AsyncLocalStorage<string | null>();
+
 const mcpHandler = createMcpHandler(
   (server) => {
     server.tool(
@@ -29,7 +35,10 @@ const mcpHandler = createMcpHandler(
       `${PRODUCT_SENTENCE} Create a request or a send, read status, wait a bounded time, cancel, list files, or merge a secondary transfer into a primary using both private agent tokens. Same as the share.imeatsack.com HTTP API. This service does not send mail.`,
       sharemeatsackToolInputShape,
       async (args) => {
-        const tool = createSharemeatsackTool(getDefaultTransferService());
+        const authorization = requestAuthorization.getStore() ?? null;
+        const tool = createSharemeatsackTool(getDefaultTransferService(), () =>
+          identifyCaller(authorization),
+        );
         const result = await tool.invoke(args);
         const text = JSON.stringify(
           isSharemeatsackToolError(result) ? apiErrorBody(result) : result,
@@ -77,7 +86,9 @@ function withMcpCors(response: Response): Response {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  return withMcpCors(await mcpHandler(request));
+  return withMcpCors(
+    await requestAuthorization.run(request.headers.get("authorization"), () => mcpHandler(request)),
+  );
 }
 
 export async function GET(request: Request): Promise<Response> {

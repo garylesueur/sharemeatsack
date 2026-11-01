@@ -33,6 +33,14 @@ Show at their canonical subdomains on desktop and mobile. Share is underlined
 and identified with `aria-current`. The same header is used on installation and
 transfer pages. GitHub, the author and the agent documents are in the footer.
 
+### B6 — Sign in goes to lanyard 🟢 implemented
+
+When `LANYARD_URL` is set, the header on the home, installation and transfer
+pages shows **Sign in**, linking to `{LANYARD_URL}/sign-in?product=sharemeatsack`.
+share.imeatsack.com never shows a sign-in screen of its own. With `LANYARD_URL`
+unset the link is not shown. The apex `imeatsack.com` home page is served by the
+showmeatsack project, not this repository, so its Sign in link is not set here.
+
 ## Rules (Invariants)
 
 - The product is always called **share.imeatsack.com** on this page.

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { UNAUTHORIZED, type Caller } from "./lanyard";
 import { PRODUCT_NAME } from "./product";
 import {
   FILE_MAX_BYTES,
@@ -60,7 +61,22 @@ function invalidAction(message: string): TransferServiceError {
   };
 }
 
-export function createSharemeatsackTool(transfers: TransferService) {
+const anonymous = async (): Promise<Caller> => ({ kind: "anonymous" });
+
+/**
+ * `identify` is asked only when the tool creates a transfer, so status, wait,
+ * cancel, files, and merge never depend on lanyard.
+ */
+export function createSharemeatsackTool(
+  transfers: TransferService,
+  identify: () => Promise<Caller> = anonymous,
+) {
+  async function creator(): Promise<{ account?: string } | TransferServiceError> {
+    const caller = await identify();
+    if (caller.kind === "refused") return { ...UNAUTHORIZED };
+    return caller.kind === "account" ? { account: caller.account } : {};
+  }
+
   return {
     name: SHAREMEATSACK_TOOL_NAME,
     async invoke(input: {
@@ -81,29 +97,39 @@ export function createSharemeatsackTool(transfers: TransferService) {
       files?: { name: string; type?: string; size: number }[];
     }): Promise<unknown> {
       if (input.action === "request") {
-        return await transfers.create({
-          action: "request",
-          title: input.title,
-          message: input.message,
-          expiresInSeconds: input.expiresInSeconds,
-          maxFiles: input.maxFiles,
-          maxFileSize: input.maxFileSize,
-          allowedTypes: input.allowedTypes,
-          metadata: input.metadata,
-          callbackUrl: input.callbackUrl,
-        });
+        const by = await creator();
+        if (isTransferServiceError(by)) return by;
+        return await transfers.create(
+          {
+            action: "request",
+            title: input.title,
+            message: input.message,
+            expiresInSeconds: input.expiresInSeconds,
+            maxFiles: input.maxFiles,
+            maxFileSize: input.maxFileSize,
+            allowedTypes: input.allowedTypes,
+            metadata: input.metadata,
+            callbackUrl: input.callbackUrl,
+          },
+          by,
+        );
       }
 
       if (input.action === "send") {
-        return await transfers.create({
-          action: "send",
-          title: input.title,
-          message: input.message,
-          expiresInSeconds: input.expiresInSeconds,
-          metadata: input.metadata,
-          callbackUrl: input.callbackUrl,
-          files: input.files,
-        });
+        const by = await creator();
+        if (isTransferServiceError(by)) return by;
+        return await transfers.create(
+          {
+            action: "send",
+            title: input.title,
+            message: input.message,
+            expiresInSeconds: input.expiresInSeconds,
+            metadata: input.metadata,
+            callbackUrl: input.callbackUrl,
+            files: input.files,
+          },
+          by,
+        );
       }
 
       if (!input.transferId) {

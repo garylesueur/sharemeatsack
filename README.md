@@ -50,8 +50,32 @@ Three 1Password items live in the **Agents** vault: `y4tyhoe2snpl2eki4baltvlmwi`
 Same field names, different values. Local work uses Development only.
 
 `.env.development.tpl`, `.env.preview.tpl`, and `.env.production.tpl` hold
-`op://` references only. `.env.example` is the empty placeholder. Never print
-`.env` contents and never commit secrets.
+`op://` references for secrets and plain values for non-secrets
+(`PUBLIC_BASE_URL`, `LANYARD_URL`). `.env.example` is the empty placeholder.
+Never print `.env` contents and never commit secrets.
+
+## Sign-in (lanyard)
+
+People sign in on lanyard, never here. `LANYARD_URL` is lanyard's origin and is
+not a secret. It is empty in every template, which keeps this service exactly as
+it is without lanyard: no **Sign in** link, and any `Authorization` header on
+create is ignored.
+
+Set it (for example in `.env.local`, or with `vercel env add LANYARD_URL`, or by
+filling the template line and running `pnpm env:vercel`) to switch sign-in on:
+
+- The header shows **Sign in**, linking to `{LANYARD_URL}/sign-in?product=sharemeatsack`.
+- An agent may send a lanyard token as `Authorization: Bearer …` on
+  `POST /api/v1/transfers` or on an MCP `request`/`send`. It is verified with
+  `POST {LANYARD_URL}/api/v1/verify`. Accepted: the new transfer records the
+  account. Refused: `401 unauthorized`, nothing created. If lanyard is down, a
+  token accepted in the last five minutes still works.
+- Creates without a token, and every route that takes a transfer token as
+  Bearer, never contact lanyard.
+
+`src/lib/product-verifier.ts` is a verbatim copy of lanyard's
+`src/lib/verification/product-verifier.ts`. Change it there and copy it back.
+Pages read `LANYARD_URL` at build time, so redeploy after changing it.
 
 ## Plugin marketplace
 

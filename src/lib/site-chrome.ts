@@ -1,4 +1,5 @@
 import { CURSOR_PLUGIN_HREF } from "./cursor-install";
+import { lanyardSignInHref } from "./lanyard";
 import { publicOrigin } from "./public-origin";
 
 export function siteChromeProps() {
@@ -12,5 +13,6 @@ export function siteChromeProps() {
       { label: "mcp.md", href: `${origin}/mcp.md` },
       { label: "llms.txt", href: "/llms.txt" },
     ],
+    accountHref: lanyardSignInHref(),
   };
 }

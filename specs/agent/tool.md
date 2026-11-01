@@ -16,7 +16,7 @@ The tool is named `share.imeatsack.com`. Its actions are `request`, `send`, `sta
 
 ### B2 — Create is open today 🟢 implemented
 
-Calling `request` or `send` needs no key. A flood from one address is refused for a while. Creating will later need a lanyard token; a call without one will be told where to authorise. The person who opens an upload or download link still needs nothing.
+Calling `request` or `send` needs no key. A flood from one address is refused for a while. A lanyard token is optional (B12); a call without one behaves exactly as it always has. Creating will later need a lanyard token; a call without one will be told where to authorise. The person who opens an upload or download link still needs nothing.
 
 ### B3 — The agent confirms the person when someone will open the link 🟢 implemented
 
@@ -57,9 +57,21 @@ Action `merge` takes `transferId` and `agentToken` for the primary share, and `s
 
 The result reports the primary and secondary ids, moved and total file counts, an empty secondary count, and the primary's existing download link and expiry. Additional shares can be merged with repeated calls into the same primary. [Moving files B14](../transfers/files/moving-files.md) owns merge eligibility, limits, retry, ownership, and retention rules.
 
+### B12 — A signed-in agent can create as its account 🟢 implemented
+
+When `LANYARD_URL` is set, an agent may send a lanyard token as `Authorization: Bearer …` on `POST /api/v1/transfers` or on the MCP request that calls `request` or `send`. share.imeatsack.com asks lanyard (`POST {LANYARD_URL}/api/v1/verify` with product `sharemeatsack`) whether the token is good.
+
+- Accepted: the transfer is created as usual and records the lanyard account that made it. The reply is unchanged. The account is a record only; it does not change who can open, upload, manage, or read the transfer.
+- Refused: nothing is created. HTTP answers `401` with error code `unauthorized`; the tool answers the same error.
+- Lanyard unreachable: a token lanyard accepted in the last five minutes keeps working; any other token is refused.
+
+Without a Bearer token, or with `LANYARD_URL` unset, create never contacts lanyard. Every route that takes a transfer token as Bearer (status, wait, cancel, files, merge, upload, read) keeps treating it as that transfer token and never contacts lanyard.
+
 ## Rules (Invariants)
 
 - There is one tool name: `share.imeatsack.com`.
+- Anonymous create, open, upload, download, and manage never depend on lanyard being configured or reachable.
+- share.imeatsack.com verifies a lanyard token and discards it. It never stores a token.
 - Tool and HTTP are the same transfers.
 - The agent token is a bearer secret. It does not appear in the human URL.
 - This service does not send mail and does not post to other chats.
@@ -91,7 +103,7 @@ _None._ Request and send own the journeys.
 
 ## Future Considerations
 
-- Lanyard on create (free account; teams and custom domains paid).
+- Requiring a lanyard token on create (free account; teams and custom domains paid). Today it is optional.
 - A Meatsack portal that lists transfers after sign-in.
 - OAuth connect for hosted agents, once lanyard is the door.
 
