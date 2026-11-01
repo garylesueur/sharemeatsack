@@ -49,6 +49,14 @@ export function resetLanyardVerifier(): void {
 }
 
 /**
+ * A transfer's own tokens are 32 random bytes as base64url: exactly 43
+ * characters. Create has always ignored them, so an agent that reuses its
+ * header from a status call keeps creating anonymously instead of being
+ * refused by lanyard. lanyard tokens never take this shape.
+ */
+const TRANSFER_TOKEN_SHAPE = /^[A-Za-z0-9_-]{43}$/;
+
+/**
  * Identify the caller of a create from its Authorization header.
  *
  * No Bearer token, or no LANYARD_URL, is anonymous — exactly as before lanyard.
@@ -59,7 +67,7 @@ export async function identifyCaller(authorization: string | null | undefined): 
     return { kind: "anonymous" };
   }
   const token = authorization.slice("Bearer ".length);
-  if (!token) {
+  if (!token || TRANSFER_TOKEN_SHAPE.test(token)) {
     return { kind: "anonymous" };
   }
   const outcome = await verifierFor(url)(token);
