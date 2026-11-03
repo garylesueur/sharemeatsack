@@ -21,7 +21,7 @@
     "sync:preview-assets": "node scripts/sync-preview-assets.mjs"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@modelcontextprotocol/sdk": "^1.32.0",
     "@upstash/redis": "^1.38.4",
     "@vercel/analytics": "^2.0.1",
     "aws4fetch": "^1.0.20",
